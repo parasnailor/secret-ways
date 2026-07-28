@@ -38,14 +38,14 @@ Options → BROWSE FILES will take you there). It's written on first launch:
 
 ```json
 {
-  "Version": 2,
+  "Version": 3,
   "QuickBindModifier": "None",
   "ClearModifier": "Shift",
   "RestoreZoom": true,
   "TravelSeconds": 0.45,
   "BindModeTimeoutSeconds": 6.0,
   "ShowOverlay": true,
-  "Locations": {}
+  "Playthroughs": {}
 }
 ```
 
@@ -55,14 +55,19 @@ change them under Options → Controls.
 - **`QuickBindModifier`** lets you bind without entering bind mode (hold it and
   press a slot key). It ships as `"None"`; `"Shift"`, `"Ctrl"` and `"Alt"` work.
 - **`RestoreZoom": false`** jumps to the saved spot but keeps your current zoom.
-- **`Locations`** is keyed by slot (`lhslot1`…`lhslot10`), not by key, so
-  rebinding doesn't orphan anything. Entries take an optional `"Label"` if you
+- **`Playthroughs`** holds one entry per playthrough, each with its own
+  `Locations` keyed by slot (`lhslot1`…`lhslot10`) rather than by key, so
+  rebinding doesn't orphan anything. Locations take an optional `"Label"` if you
   want to annotate them; the mod preserves it but doesn't display it.
-- **`Version`** drives migration. A pre-1.1 file keyed by key name (`"F5"`) is
-  remapped to slot ids automatically on first load, and rewritten.
+- **`Version`** drives migration. Upgrading from a pre-1.3 file drops the
+  locations it held — they were shared by every playthrough, and there's no
+  sound way to say which one they belonged to — but the file is copied to
+  `location_hotkeys.json.pre-v3.bak` first, and your settings carry over.
 
-Locations are shared across save files, since Hush House is the same house in
-every playthrough. Edit or delete the file to reset.
+Each playthrough gets its own locations, so a new game starts with nothing bound.
+A playthrough is identified by its protagonist rather than by a save file, which
+means locations survive reloading and Save As. Entries for abandoned playthroughs
+just sit there; delete them by hand, or delete the file to reset everything.
 
 ## Building
 
@@ -113,6 +118,11 @@ From there it's all public game API — no patching:
   to the playfield, the same check `OptionsPanel` uses.
 - `CamOperator.StopAllMovement()` before a jump, so held pan keys and drag drift
   don't fight the glide.
+- `Watchman.Get<Stable>().Protag()` — which playthrough we're in. There's no
+  "current save file" to key off: a named save is depersisted into the live state
+  and its provider discarded, after which autosaves go to `AUTOSAVE.json` anyway.
+  The protagonist's `DateTimeCreated` is persisted and restored with the save, so
+  [Playthrough.cs](src/Playthrough.cs) uses its UTC ticks as the id.
 
 The Options → Controls rows are content, not code. `AureateOptionsPanel` builds a
 row for every `Setting` entity in the compendium, and picks the keybind prefab for

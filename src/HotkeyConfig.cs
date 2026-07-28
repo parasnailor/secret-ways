@@ -23,6 +23,17 @@ namespace BookOfHoursLocationHotkeys
 		public Vector2 TablePosition => new Vector2(X, Y);
 	}
 
+	/// <summary>One playthrough's saved locations, keyed by slot action id.</summary>
+	public class PlaythroughLocations
+	{
+		/// <summary>Who this run belongs to. Cosmetic - refreshed on every write, since
+		/// the player can name their character partway through.</summary>
+		public string Label;
+
+		[JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
+		public Dictionary<string, SavedLocation> Locations = new Dictionary<string, SavedLocation>();
+	}
+
 	/// <summary>
 	/// User-editable settings plus the saved locations themselves, persisted next to
 	/// the save files so a mod reinstall doesn't lose them.
@@ -36,16 +47,12 @@ namespace BookOfHoursLocationHotkeys
 		private const string FileName = "location_hotkeys.json";
 
 		/// <summary>Bumped when the file's shape changes, so Load can migrate it.</summary>
-		public const int CurrentVersion = 2;
-
-		/// <summary>Slot keys used to be the dictionary keys, before the bindings moved
-		/// into Options -> Controls; this is the order they mapped to slots 1-7.</summary>
-		private static readonly string[] LegacySlotKeys = { "F5", "F6", "F7", "F8", "F9", "F10", "F12" };
+		public const int CurrentVersion = 3;
 
 		public int Version;
 
 		/// <summary>Held alongside a slot key, binds without entering bind mode. Off by
-		/// default because desktop environments tend to claim Alt/Ctrl + F-key.</summary>
+		/// default so that a slot key on its own always means "go there".</summary>
 		public string QuickBindModifier = "None";
 
 		/// <summary>Held alongside a slot key in bind mode, clears that slot instead of binding it.</summary>
@@ -63,9 +70,10 @@ namespace BookOfHoursLocationHotkeys
 		/// <summary>Draw the bind-mode banner and the confirmation toasts.</summary>
 		public bool ShowOverlay = true;
 
-		/// <summary>Slot key name -> saved location.</summary>
+		/// <summary>Playthrough id (see Playthrough.TryGetCurrent) -> that run's locations.
+		/// Scoped per run rather than shared, so a new game starts with nothing bound.</summary>
 		[JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
-		public Dictionary<string, SavedLocation> Locations = new Dictionary<string, SavedLocation>();
+		public Dictionary<string, PlaythroughLocations> Playthroughs = new Dictionary<string, PlaythroughLocations>();
 
 		[JsonIgnore]
 		public static string Path => System.IO.Path.Combine(Application.persistentDataPath, FileName);
@@ -92,14 +100,14 @@ namespace BookOfHoursLocationHotkeys
 				}
 
 				// A hand-edited file can legitimately omit this; don't make callers null-check.
-				if (loaded.Locations == null)
+				if (loaded.Playthroughs == null)
 				{
-					loaded.Locations = new Dictionary<string, SavedLocation>();
+					loaded.Playthroughs = new Dictionary<string, PlaythroughLocations>();
 				}
 
 				if (loaded.Version < CurrentVersion)
 				{
-					loaded.MigrateToSlotIds();
+					loaded.MigrateToPerPlaythrough();
 					loaded.Version = CurrentVersion;
 					loaded.Save();
 				}
@@ -114,32 +122,68 @@ namespace BookOfHoursLocationHotkeys
 		}
 
 		/// <summary>
-		/// v1 keyed locations by key name ("F5"); v2 keys them by slot action id
-		/// ("lhslot1"), because the player can now rebind the keys in Options.
+		/// Up to v2 every playthrough shared one flat "Locations" map; v3 scopes them per
+		/// playthrough. There's no sound way to decide which run the shared ones belonged
+		/// to, so they're dropped - Deserialize has already discarded the field by the time
+		/// we get here, since it no longer exists on this class. Settings are kept.
 		/// </summary>
-		private void MigrateToSlotIds()
+		private void MigrateToPerPlaythrough()
 		{
-			Dictionary<string, SavedLocation> migrated = new Dictionary<string, SavedLocation>();
-			int moved = 0;
-			foreach (KeyValuePair<string, SavedLocation> entry in Locations)
+			// Dropping locations is irreversible, so leave the old file behind.
+			try
 			{
-				int legacyIndex = Array.IndexOf(LegacySlotKeys, entry.Key);
-				if (legacyIndex >= 0)
-				{
-					migrated[GameBindings.SlotAction(legacyIndex + 1)] = entry.Value;
-					moved++;
-				}
-				else
-				{
-					migrated[entry.Key] = entry.Value;
-				}
+				string backup = Path + ".pre-v3.bak";
+				File.Copy(Path, backup, true);
+				NoonUtility.Log("Location Hotkeys: saved locations are now per-playthrough, so the old shared ones were cleared. The previous file is at " + backup + ".");
+			}
+			catch (Exception e)
+			{
+				NoonUtility.LogWarning("Location Hotkeys: saved locations are now per-playthrough, so the old shared ones were cleared, but the backup couldn't be written (" + e.Message + ").");
+			}
+		}
+
+		public bool TryGetLocation(string playthroughId, string slotAction, out SavedLocation location)
+		{
+			location = null;
+			return Playthroughs.TryGetValue(playthroughId, out PlaythroughLocations run)
+				&& run != null
+				&& run.Locations != null
+				&& run.Locations.TryGetValue(slotAction, out location)
+				&& location != null;
+		}
+
+		public void SetLocation(string playthroughId, string label, string slotAction, SavedLocation location)
+		{
+			if (!Playthroughs.TryGetValue(playthroughId, out PlaythroughLocations run) || run == null)
+			{
+				run = new PlaythroughLocations();
+				Playthroughs[playthroughId] = run;
 			}
 
-			Locations = migrated;
-			if (moved > 0)
+			// A hand-edited file can drop this, and the name can change mid-run.
+			if (run.Locations == null)
 			{
-				NoonUtility.Log("Location Hotkeys: moved " + moved + " saved location(s) onto the new rebindable slots.");
+				run.Locations = new Dictionary<string, SavedLocation>();
 			}
+
+			run.Label = label;
+			run.Locations[slotAction] = location;
+			Save();
+		}
+
+		/// <summary>True if there was anything there to clear.</summary>
+		public bool ClearLocation(string playthroughId, string slotAction)
+		{
+			if (!Playthroughs.TryGetValue(playthroughId, out PlaythroughLocations run)
+				|| run == null
+				|| run.Locations == null
+				|| !run.Locations.Remove(slotAction))
+			{
+				return false;
+			}
+
+			Save();
+			return true;
 		}
 
 		public void Save()

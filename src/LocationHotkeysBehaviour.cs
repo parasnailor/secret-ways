@@ -161,6 +161,12 @@ namespace BookOfHoursLocationHotkeys
 
 		private void Bind(int slot)
 		{
+			if (!Playthrough.TryGetCurrent(out string playthroughId, out string label))
+			{
+				Toast("No playthrough to save this against.");
+				return;
+			}
+
 			CamOperator cam = Watchman.Get<CamOperator>();
 			Camera attached = (cam == null) ? null : cam.GetAttachedCamera();
 			if (attached == null)
@@ -170,22 +176,26 @@ namespace BookOfHoursLocationHotkeys
 			}
 
 			Vector3 position = attached.transform.position;
-			_config.Locations[GameBindings.SlotAction(slot)] = new SavedLocation
+			_config.SetLocation(playthroughId, label, GameBindings.SlotAction(slot), new SavedLocation
 			{
 				X = position.x,
 				Y = position.y,
 				Z = position.z
-			};
-			_config.Save();
+			});
 
 			Toast("Saved this view to " + SlotLabel(slot) + ".");
 		}
 
 		private void Clear(int slot)
 		{
-			if (_config.Locations.Remove(GameBindings.SlotAction(slot)))
+			if (!Playthrough.TryGetCurrent(out string playthroughId, out string _))
 			{
-				_config.Save();
+				Toast("No playthrough to clear this from.");
+				return;
+			}
+
+			if (_config.ClearLocation(playthroughId, GameBindings.SlotAction(slot)))
+			{
 				Toast("Cleared " + SlotLabel(slot) + ".");
 			}
 			else
@@ -196,7 +206,8 @@ namespace BookOfHoursLocationHotkeys
 
 		private void Jump(int slot)
 		{
-			if (!_config.Locations.TryGetValue(GameBindings.SlotAction(slot), out SavedLocation location) || location == null)
+			if (!Playthrough.TryGetCurrent(out string playthroughId, out string _)
+				|| !_config.TryGetLocation(playthroughId, GameBindings.SlotAction(slot), out SavedLocation location))
 			{
 				return;
 			}
