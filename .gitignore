@@ -1,0 +1,6 @@
+ref/decomp/
+ref/lib/
+dist/
+bin/
+obj/
+*.user

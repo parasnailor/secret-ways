@@ -1,0 +1,86 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Matches what the game's own assemblies were compiled against. -->
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>LocationHotkeys</AssemblyName>
+    <RootNamespace>BookOfHoursLocationHotkeys</RootNamespace>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Version>1.0.0</Version>
+    <!-- The game supplies every reference at runtime; ship only our own assembly. -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <DebugType>none</DebugType>
+    <!-- Referencing .NET Framework assemblies from netstandard2.0 is expected here. -->
+    <NoWarn>$(NoWarn);CS1701;CS1702;NU1701</NoWarn>
+    <!-- UnityEngine.dll is a facade over ~60 modules; we don't need the resolution report. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <!-- Assemblies copied out of the game install by tools/sync-refs.sh. -->
+  <PropertyGroup>
+    <GameLibDir>$(MSBuildThisFileDirectory)../ref/lib</GameLibDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="SecretHistories.Main">
+      <HintPath>$(GameLibDir)/SecretHistories.Main.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SecretHistories.Constants">
+      <HintPath>$(GameLibDir)/SecretHistories.Constants.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SecretHistories.Interfaces">
+      <HintPath>$(GameLibDir)/SecretHistories.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SecretHistories.Enums">
+      <HintPath>$(GameLibDir)/SecretHistories.Enums.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(GameLibDir)/Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.InputSystem">
+      <HintPath>$(GameLibDir)/Unity.InputSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(GameLibDir)/Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(GameLibDir)/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GameLibDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GameLibDir)/UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputModule">
+      <HintPath>$(GameLibDir)/UnityEngine.InputModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GameLibDir)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameLibDir)/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(GameLibDir)/UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
