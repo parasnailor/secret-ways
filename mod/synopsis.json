@@ -1,9 +1,9 @@
 {
     "name": "Location Hotkeys",
-    "author": "Captain Snail",
-    "version": "1.0.0",
+    "author": "Anonymous",
+    "version": "1.2.0",
 
     "description": "Bind spots in Hush House to keys and jump straight back to them.",
-    "description_long": "Press Page Up to enter bind mode, then press F5-F10 or F12 to save the current view to that key. Press that key at any other time to fly the camera back. Settings and saved locations live in location_hotkeys.json next to your save file.",
+    "description_long": "Press Page Up to enter bind mode, then press one of the ten location keys to save the current view to it. Press that key at any other time to fly the camera back. All eleven keys are rebindable under Options > Controls. Saved locations live in location_hotkeys.json next to your save file.",
     "tags": [ "Quality of Life" ]
 }

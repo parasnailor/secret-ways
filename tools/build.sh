@@ -15,6 +15,7 @@ dotnet build "$REPO/src/LocationHotkeys.csproj" -c Release -v minimal
 rm -rf "$STAGE"
 mkdir -p "$STAGE/dll"
 cp "$REPO/mod/synopsis.json" "$STAGE/synopsis.json"
+cp -r "$REPO/mod/content" "$STAGE/content"
 cp "$REPO/src/bin/Release/LocationHotkeys.dll" "$STAGE/dll/LocationHotkeys.dll"
 
 echo

@@ -1,0 +1,21 @@
+{
+	"cultures": [
+		{
+			"id": "en",
+			"uilabels$add": {
+				"UI_KB_LH_HEADER": "LOCATION HOTKEYS",
+				"UI_KB_LH_BINDMODE": "Bind mode (then press a location key)",
+				"UI_KB_LH_SLOT1": "Go to location 1",
+				"UI_KB_LH_SLOT2": "Go to location 2",
+				"UI_KB_LH_SLOT3": "Go to location 3",
+				"UI_KB_LH_SLOT4": "Go to location 4",
+				"UI_KB_LH_SLOT5": "Go to location 5",
+				"UI_KB_LH_SLOT6": "Go to location 6",
+				"UI_KB_LH_SLOT7": "Go to location 7",
+				"UI_KB_LH_SLOT8": "Go to location 8",
+				"UI_KB_LH_SLOT9": "Go to location 9",
+				"UI_KB_LH_SLOT10": "Go to location 10"
+			}
+		}
+	]
+}

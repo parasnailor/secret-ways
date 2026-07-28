@@ -12,8 +12,8 @@ using UnityEngine.UI;
 namespace BookOfHoursLocationHotkeys
 {
 	/// <summary>
-	/// Polls the keyboard once the playfield is up: binds the current camera
-	/// position to a slot key, and flies the camera back to it on demand.
+	/// Watches the mod's keybindings once the playfield is up: binds the current
+	/// camera position to a slot, and flies the camera back to it on demand.
 	/// </summary>
 	public class LocationHotkeysBehaviour : MonoBehaviour
 	{
@@ -22,18 +22,14 @@ namespace BookOfHoursLocationHotkeys
 		/// <summary>Give up rather than spam the log if something is structurally wrong.</summary>
 		private const int MaxConsecutiveErrors = 10;
 
-		private struct Slot
-		{
-			public string Name;
+		/// <summary>How long to wait for the game's input before saying so in the log.</summary>
+		private const float AttachWarningSeconds = 60f;
 
-			public Key Key;
-		}
+		private bool _attachWarningLogged;
 
 		private HotkeyConfig _config;
 
-		private readonly List<Slot> _slots = new List<Slot>();
-
-		private Key _bindModeKey;
+		private readonly GameBindings _bindings = new GameBindings();
 
 		private KeyNames.Modifier _quickBindModifier;
 
@@ -56,28 +52,9 @@ namespace BookOfHoursLocationHotkeys
 		public void Awake()
 		{
 			_config = HotkeyConfig.Load();
-
-			if (!KeyNames.TryParseKey(_config.BindModeKey, out _bindModeKey))
-			{
-				NoonUtility.LogWarning("Location Hotkeys: '" + _config.BindModeKey + "' isn't a key name, so bind mode has no key. Valid names are the UnityEngine.InputSystem.Key values, e.g. PageUp, Home, Backslash, Semicolon.");
-			}
-
 			_quickBindModifier = KeyNames.ParseModifier(_config.QuickBindModifier);
 			_clearModifier = KeyNames.ParseModifier(_config.ClearModifier);
-
-			foreach (string name in _config.SlotKeys)
-			{
-				if (KeyNames.TryParseKey(name, out Key key))
-				{
-					_slots.Add(new Slot { Name = name, Key = key });
-				}
-				else
-				{
-					NoonUtility.LogWarning("Location Hotkeys: skipping slot key '" + name + "' - not a recognised key name.");
-				}
-			}
-
-			NoonUtility.Log("Location Hotkeys: watching " + _slots.Count + " slot key(s); config at " + HotkeyConfig.Path);
+			NoonUtility.Log("Location Hotkeys: config at " + HotkeyConfig.Path);
 		}
 
 		public void Update()
@@ -101,15 +78,19 @@ namespace BookOfHoursLocationHotkeys
 
 		private void Tick()
 		{
-			Keyboard keyboard = Keyboard.current;
-			if (keyboard == null)
+			// Register with the game's keybindings as soon as ControlsController
+			// exists, which is well before any playfield: Options -> Controls is
+			// reachable from the main menu, and the rows there read these actions.
+			bool registered = _bindings.TryAttach();
+			if (!registered && !_attachWarningLogged && Time.unscaledTime > AttachWarningSeconds)
 			{
-				return;
+				_attachWarningLogged = true;
+				NoonUtility.LogWarning("Location Hotkeys: no ControlsController after " + AttachWarningSeconds + "s, so the keys were never registered - the Options > Controls rows will read blank and the hotkeys won't fire.");
 			}
 
 			// Outside the playfield - main menu, loading, the debug console, a text
 			// field - the slot keys aren't ours to read.
-			if (!PlayfieldIsActive() || Watchman.DebugIsVisible() || TextEntryHasFocus())
+			if (!registered || !PlayfieldIsActive() || Watchman.DebugIsVisible() || TextEntryHasFocus())
 			{
 				_bindMode = false;
 				return;
@@ -121,15 +102,15 @@ namespace BookOfHoursLocationHotkeys
 				Toast("Bind mode cancelled.");
 			}
 
-			if (KeyNames.WasPressedThisFrame(keyboard, _bindModeKey))
+			if (_bindings.WasPressedThisFrame(GameBindings.BindModeAction))
 			{
 				ToggleBindMode();
 				return;
 			}
 
-			foreach (Slot slot in _slots)
+			for (int slot = 1; slot <= GameBindings.SlotCount; slot++)
 			{
-				if (!KeyNames.WasPressedThisFrame(keyboard, slot.Key))
+				if (!_bindings.WasPressedThisFrame(GameBindings.SlotAction(slot)))
 				{
 					continue;
 				}
@@ -137,7 +118,7 @@ namespace BookOfHoursLocationHotkeys
 				if (_bindMode)
 				{
 					_bindMode = false;
-					if (KeyNames.IsHeld(keyboard, _clearModifier))
+					if (ModifierHeld(_clearModifier))
 					{
 						Clear(slot);
 					}
@@ -146,7 +127,7 @@ namespace BookOfHoursLocationHotkeys
 						Bind(slot);
 					}
 				}
-				else if (_quickBindModifier != KeyNames.Modifier.None && KeyNames.IsHeld(keyboard, _quickBindModifier))
+				else if (_quickBindModifier != KeyNames.Modifier.None && ModifierHeld(_quickBindModifier))
 				{
 					Bind(slot);
 				}
@@ -159,14 +140,14 @@ namespace BookOfHoursLocationHotkeys
 			}
 		}
 
+		private static bool ModifierHeld(KeyNames.Modifier modifier)
+		{
+			Keyboard keyboard = Keyboard.current;
+			return keyboard != null && KeyNames.IsHeld(keyboard, modifier);
+		}
+
 		private void ToggleBindMode()
 		{
-			if (_slots.Count == 0)
-			{
-				Toast("No slot keys are configured.");
-				return;
-			}
-
 			_bindMode = !_bindMode;
 			if (_bindMode)
 			{
@@ -178,7 +159,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 		}
 
-		private void Bind(Slot slot)
+		private void Bind(int slot)
 		{
 			CamOperator cam = Watchman.Get<CamOperator>();
 			Camera attached = (cam == null) ? null : cam.GetAttachedCamera();
@@ -189,7 +170,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 
 			Vector3 position = attached.transform.position;
-			_config.Locations[slot.Name] = new SavedLocation
+			_config.Locations[GameBindings.SlotAction(slot)] = new SavedLocation
 			{
 				X = position.x,
 				Y = position.y,
@@ -197,25 +178,25 @@ namespace BookOfHoursLocationHotkeys
 			};
 			_config.Save();
 
-			Toast("Saved this view to " + slot.Name + ".");
+			Toast("Saved this view to " + SlotLabel(slot) + ".");
 		}
 
-		private void Clear(Slot slot)
+		private void Clear(int slot)
 		{
-			if (_config.Locations.Remove(slot.Name))
+			if (_config.Locations.Remove(GameBindings.SlotAction(slot)))
 			{
 				_config.Save();
-				Toast("Cleared " + slot.Name + ".");
+				Toast("Cleared " + SlotLabel(slot) + ".");
 			}
 			else
 			{
-				Toast(slot.Name + " was already empty.");
+				Toast(SlotLabel(slot) + " was already empty.");
 			}
 		}
 
-		private void Jump(Slot slot)
+		private void Jump(int slot)
 		{
-			if (!_config.Locations.TryGetValue(slot.Name, out SavedLocation location) || location == null)
+			if (!_config.Locations.TryGetValue(GameBindings.SlotAction(slot), out SavedLocation location) || location == null)
 			{
 				return;
 			}
@@ -232,6 +213,12 @@ namespace BookOfHoursLocationHotkeys
 
 			float height = _config.RestoreZoom ? location.Z : cam.GetCurrentZoomHeight();
 			cam.PointAtTableLevelAtHeight(location.TablePosition, height, _config.ClampedTravelSeconds, null);
+		}
+
+		/// <summary>Whatever key the player has this slot bound to right now.</summary>
+		private string SlotLabel(int slot)
+		{
+			return _bindings.DisplayString(GameBindings.SlotAction(slot));
 		}
 
 		private static bool PlayfieldIsActive()
@@ -296,25 +283,19 @@ namespace BookOfHoursLocationHotkeys
 
 		private string BindModePrompt()
 		{
-			string keys = (_slots.Count == 0) ? "(none configured)" : string.Join(" ", SlotNames());
-			string line = "BIND MODE - press " + keys + " to save this view";
+			List<string> keys = new List<string>();
+			for (int slot = 1; slot <= GameBindings.SlotCount; slot++)
+			{
+				keys.Add(SlotLabel(slot));
+			}
+
+			string line = "BIND MODE - press " + string.Join(" ", keys.ToArray()) + " to save this view";
 			if (_clearModifier != KeyNames.Modifier.None)
 			{
 				line += "  |  " + _clearModifier + "+key clears it";
 			}
 
 			return line;
-		}
-
-		private string[] SlotNames()
-		{
-			string[] names = new string[_slots.Count];
-			for (int i = 0; i < _slots.Count; i++)
-			{
-				names[i] = _slots[i].Name;
-			}
-
-			return names;
 		}
 
 		private void DrawPanel(string text)

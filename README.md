@@ -9,18 +9,26 @@ Tested against Book of Hours `2026.1.f.3` (Linux, Mono).
 | Key | What it does |
 | --- | --- |
 | `Page Up` | Toggle **bind mode** |
-| `F5` `F6` `F7` `F8` `F9` `F10` `F12` | Jump to that saved view — or, in bind mode, save the current view to it |
+| `U` `I` `O` `P` `J` `K` `L` `;` `,` `.` | Jump to that saved view — or, in bind mode, save the current view to it |
 | `Shift` + slot key (in bind mode) | Clear that slot |
 
-Bind mode shows a banner at the bottom of the screen and gives up on its own after
-six seconds. Pressing a slot key binds it and leaves bind mode straight away.
+All eleven keys are rebindable in-game under **Options → Controls**, in a
+"LOCATION HOTKEYS" section below the base game's bindings. Rebinding there gets
+the game's own conflict handling: bind a key that's already in use and the two
+actions swap. Saved locations follow the slot, not the key, so remapping a slot
+keeps whatever view you'd saved to it.
+
+Bind mode shows a banner at the bottom of the screen and gives up on its own
+after six seconds. Pressing a slot key binds it and leaves bind mode straight
+away.
 
 Jumping restores position *and* zoom, gliding over ~0.45s. Slot keys do nothing
 outside the playfield, while the debug console is open, or while you're typing in
 a text field.
 
-The default slot keys were picked because the base game leaves them alone — it
-already uses `1`–`4` for zoom presets, `F1`–`F4` for trays and `F11` for the HUD.
+The ten defaults sit under the right hand and steer clear of the base game's own
+bindings, which include `1`–`4`, `F1`–`F4`, `F11`, the arrows and the letters
+`B` `C` `E` `M` `N` `Q` `S`.
 
 ## Settings
 
@@ -30,10 +38,9 @@ Options → BROWSE FILES will take you there). It's written on first launch:
 
 ```json
 {
-  "BindModeKey": "PageUp",
+  "Version": 2,
   "QuickBindModifier": "None",
   "ClearModifier": "Shift",
-  "SlotKeys": ["F5", "F6", "F7", "F8", "F9", "F10", "F12"],
   "RestoreZoom": true,
   "TravelSeconds": 0.45,
   "BindModeTimeoutSeconds": 6.0,
@@ -42,15 +49,17 @@ Options → BROWSE FILES will take you there). It's written on first launch:
 }
 ```
 
-- **Key names** are [`UnityEngine.InputSystem.Key`](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.7/api/UnityEngine.InputSystem.Key.html)
-  values — `PageUp`, `Home`, `Backslash`, `Semicolon`, `Digit5`, `F5`, and so on.
-  Avoid `Backquote` and `Quote`: the game uses them for its debug console.
+The keys themselves aren't in here — they live in the game's own keybindings, so
+change them under Options → Controls.
+
 - **`QuickBindModifier`** lets you bind without entering bind mode (hold it and
-  press a slot key). It ships as `"None"` because Linux desktops tend to claim
-  `Alt`/`Ctrl` + F-key for window management. `"Shift"`, `"Ctrl"` and `"Alt"` work.
+  press a slot key). It ships as `"None"`; `"Shift"`, `"Ctrl"` and `"Alt"` work.
 - **`RestoreZoom": false`** jumps to the saved spot but keeps your current zoom.
-- **`Locations`** entries take an optional `"Label"` if you want to annotate them;
-  the mod preserves it but doesn't display it.
+- **`Locations`** is keyed by slot (`lhslot1`…`lhslot10`), not by key, so
+  rebinding doesn't orphan anything. Entries take an optional `"Label"` if you
+  want to annotate them; the mod preserves it but doesn't display it.
+- **`Version`** drives migration. A pre-1.1 file keyed by key name (`"F5"`) is
+  remapped to slot ids automatically on first load, and rewritten.
 
 Locations are shared across save files, since Hush House is the same house in
 every playthrough. Edit or delete the file to reset.
@@ -63,8 +72,16 @@ tools/build.sh        # compile and stage dist/location_hotkeys
 tools/install.sh      # copy it into the game's mods folder
 ```
 
-`sync-refs.sh` and `install.sh` take `BOH_DIR` / `BOH_DATA_DIR` if your install
-or save folder isn't in the usual place. Nothing writes to the game install.
+Both `sync-refs.sh` and `install.sh` take the directory to work against as an
+argument, falling back to `BOH_DIR` / `BOH_DATA_DIR` and then to the usual
+locations:
+
+```sh
+tools/sync-refs.sh "/path/to/Book of Hours"                       # the folder holding bh_Data/
+tools/install.sh "/path/to/Weather Factory/Book of Hours"         # the folder Options → BROWSE FILES opens
+```
+
+Nothing writes to the game install.
 
 ### Enabling it
 
@@ -97,5 +114,20 @@ From there it's all public game API — no patching:
 - `CamOperator.StopAllMovement()` before a jump, so held pan keys and drag drift
   don't fight the glide.
 
-`ref/` holds assemblies copied out of the game install plus decompiled sources for
-reference. It's gitignored; regenerate it with `tools/sync-refs.sh`.
+The Options → Controls rows are content, not code. `AureateOptionsPanel` builds a
+row for every `Setting` entity in the compendium, and picks the keybind prefab for
+any whose `datatype` is `String` — so `content/settings/hotkeys.json` is enough to
+make them appear, and `content/cultures/hotkeys_loc.json` adds the labels via the
+`uilabels$add` merge operation rather than replacing the culture.
+
+What the DLL adds is the other half of the pair. The game matches a `Setting` to an
+`InputAction` **by name** (`ControlsController.ApplyExistingKeybindOverrides`,
+`KeybindSettingControlStrategy.Rebind`), so [GameBindings.cs](src/GameBindings.cs)
+injects actions named `lhbindmode` and `lhslot1`…`lhslot10` into the live
+`InputActionAsset`. Get the name wrong and the row silently rebinds `kbfallback`
+instead. Because those actions are registered after `ControlsController.Start` has
+already replayed saved overrides, `GameBindings` replays its own from each
+`Setting.CurrentValue`.
+
+`ref/` is gitignored: `ref/lib/` is assemblies copied out of the game install by
+`tools/sync-refs.sh`, `ref/decomp/` is decompiled sources kept for reference.

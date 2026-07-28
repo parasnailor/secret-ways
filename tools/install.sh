@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Copy the staged mod into the game's local mods folder.
 #
+# Usage: tools/install.sh [--enable-dll-mods] [DATA_DIR]
+#   DATA_DIR is the game's save folder - the one holding mods/ and mods.txt.
+#   It defaults to $BOH_DATA_DIR, then to the usual per-platform location.
+#   Options > BROWSE FILES in-game opens it.
+#
 # Book of Hours refuses to load any DLL mod unless a "gatekeeper" mod named
 # GHIRBI is installed and enabled - that is the game's own consent gate for
 # running third-party code. Pass --enable-dll-mods to create a local GHIRBI
@@ -9,11 +14,30 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STAGE="$REPO/dist/location_hotkeys"
-DATA="${BOH_DATA_DIR:-$HOME/.config/unity3d/Weather Factory/Book of Hours}"
-MODS="$DATA/mods"
 
 ENABLE=0
-[[ "${1:-}" == "--enable-dll-mods" ]] && ENABLE=1
+DATA=""
+for arg in "$@"; do
+	case "$arg" in
+		--enable-dll-mods)
+			ENABLE=1
+			;;
+		-*)
+			echo "Unknown option: $arg" >&2
+			echo "Usage: tools/install.sh [--enable-dll-mods] [DATA_DIR]" >&2
+			exit 1
+			;;
+		*)
+			DATA="$arg"
+			;;
+	esac
+done
+
+if [[ -z "$DATA" ]]; then
+	DATA="${BOH_DATA_DIR:-$HOME/.config/unity3d/Weather Factory/Book of Hours}"
+fi
+
+MODS="$DATA/mods"
 
 if [[ ! -d "$STAGE" ]]; then
 	echo "Nothing staged - run tools/build.sh first." >&2
@@ -22,7 +46,8 @@ fi
 
 if [[ ! -d "$DATA" ]]; then
 	echo "Can't find the game's save folder at $DATA" >&2
-	echo "Set BOH_DATA_DIR, or find it via the game's Options > BROWSE FILES." >&2
+	echo "Pass it as an argument: tools/install.sh '/path/to/Book of Hours'" >&2
+	echo "Options > BROWSE FILES in-game opens the right folder." >&2
 	exit 1
 fi
 

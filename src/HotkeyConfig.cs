@@ -35,8 +35,14 @@ namespace BookOfHoursLocationHotkeys
 
 		private const string FileName = "location_hotkeys.json";
 
-		/// <summary>Key that toggles bind mode.</summary>
-		public string BindModeKey = "PageUp";
+		/// <summary>Bumped when the file's shape changes, so Load can migrate it.</summary>
+		public const int CurrentVersion = 2;
+
+		/// <summary>Slot keys used to be the dictionary keys, before the bindings moved
+		/// into Options -> Controls; this is the order they mapped to slots 1-7.</summary>
+		private static readonly string[] LegacySlotKeys = { "F5", "F6", "F7", "F8", "F9", "F10", "F12" };
+
+		public int Version;
 
 		/// <summary>Held alongside a slot key, binds without entering bind mode. Off by
 		/// default because desktop environments tend to claim Alt/Ctrl + F-key.</summary>
@@ -44,12 +50,6 @@ namespace BookOfHoursLocationHotkeys
 
 		/// <summary>Held alongside a slot key in bind mode, clears that slot instead of binding it.</summary>
 		public string ClearModifier = "Shift";
-
-		/// <summary>The slot keys, in the order the overlay lists them.</summary>
-		/// <remarks>Replace, not Auto: otherwise Newtonsoft appends the file's entries
-		/// to the defaults above and the list doubles on every load.</remarks>
-		[JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
-		public List<string> SlotKeys = new List<string> { "F5", "F6", "F7", "F8", "F9", "F10", "F12" };
 
 		/// <summary>Restore the saved zoom height as well as the position.</summary>
 		public bool RestoreZoom = true;
@@ -79,7 +79,7 @@ namespace BookOfHoursLocationHotkeys
 			{
 				if (!File.Exists(Path))
 				{
-					HotkeyConfig fresh = new HotkeyConfig();
+					HotkeyConfig fresh = new HotkeyConfig { Version = CurrentVersion };
 					fresh.Save();
 					return fresh;
 				}
@@ -88,18 +88,20 @@ namespace BookOfHoursLocationHotkeys
 				if (loaded == null)
 				{
 					NoonUtility.LogWarning("Location Hotkeys: " + Path + " is empty; using defaults.");
-					return new HotkeyConfig();
+					return new HotkeyConfig { Version = CurrentVersion };
 				}
 
-				// A hand-edited file can legitimately omit these; don't make callers null-check.
-				if (loaded.SlotKeys == null)
-				{
-					loaded.SlotKeys = new List<string>();
-				}
-
+				// A hand-edited file can legitimately omit this; don't make callers null-check.
 				if (loaded.Locations == null)
 				{
 					loaded.Locations = new Dictionary<string, SavedLocation>();
+				}
+
+				if (loaded.Version < CurrentVersion)
+				{
+					loaded.MigrateToSlotIds();
+					loaded.Version = CurrentVersion;
+					loaded.Save();
 				}
 
 				return loaded;
@@ -107,7 +109,36 @@ namespace BookOfHoursLocationHotkeys
 			catch (Exception e)
 			{
 				NoonUtility.LogWarning("Location Hotkeys: couldn't read " + Path + " (" + e.Message + "); using defaults. The existing file will not be overwritten until you next bind something.");
-				return new HotkeyConfig();
+				return new HotkeyConfig { Version = CurrentVersion };
+			}
+		}
+
+		/// <summary>
+		/// v1 keyed locations by key name ("F5"); v2 keys them by slot action id
+		/// ("lhslot1"), because the player can now rebind the keys in Options.
+		/// </summary>
+		private void MigrateToSlotIds()
+		{
+			Dictionary<string, SavedLocation> migrated = new Dictionary<string, SavedLocation>();
+			int moved = 0;
+			foreach (KeyValuePair<string, SavedLocation> entry in Locations)
+			{
+				int legacyIndex = Array.IndexOf(LegacySlotKeys, entry.Key);
+				if (legacyIndex >= 0)
+				{
+					migrated[GameBindings.SlotAction(legacyIndex + 1)] = entry.Value;
+					moved++;
+				}
+				else
+				{
+					migrated[entry.Key] = entry.Value;
+				}
+			}
+
+			Locations = migrated;
+			if (moved > 0)
+			{
+				NoonUtility.Log("Location Hotkeys: moved " + moved + " saved location(s) onto the new rebindable slots.");
 			}
 		}
 
