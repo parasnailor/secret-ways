@@ -32,6 +32,16 @@ namespace BookOfHoursLocationHotkeys
 
 		public static readonly Color Scrim = new Color(0f, 0f, 0f, 0.45f);
 
+		/// <summary>
+		/// Sorting orders for the mod's own layers. The game never sets a sorting
+		/// order anywhere in its code, so everything of its own sits at zero and
+		/// these can't collide with it. The banner sits above the wheel so that a
+		/// confirmation raised from the wheel isn't hidden behind its own scrim.
+		/// </summary>
+		public const int SortOrderWheel = 30000;
+
+		public const int SortOrderBanner = 30010;
+
 		private static Transform _overlayParent;
 
 		private static readonly Dictionary<string, Sprite> _sprites = new Dictionary<string, Sprite>();
@@ -251,6 +261,20 @@ namespace BookOfHoursLocationHotkeys
 				filterMode = FilterMode.Bilinear,
 				wrapMode = TextureWrapMode.Clamp
 			};
+		}
+
+		/// <summary>
+		/// Gives a rect its own nested canvas so it draws above the game's windows
+		/// rather than only above its siblings. The raycaster has to come with it:
+		/// graphics register against their nearest canvas, so the parent canvas's
+		/// raycaster stops seeing them the moment this one is added.
+		/// </summary>
+		public static void SortAbove(RectTransform rect, int sortingOrder)
+		{
+			Canvas canvas = rect.gameObject.AddComponent<Canvas>();
+			canvas.overrideSorting = true;
+			canvas.sortingOrder = sortingOrder;
+			rect.gameObject.AddComponent<GraphicRaycaster>();
 		}
 
 		/// <summary>A dark plate with a gold border, the mod's one panel shape.</summary>

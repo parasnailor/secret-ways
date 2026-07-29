@@ -8,7 +8,7 @@ Tested against Book of Hours `2026.1.f.3` (Linux, Mono).
 
 | Key | What it does |
 | --- | --- |
-| `Page Down` | Open the **location wheel** |
+| `T` | Open the **location wheel** |
 | `Page Up` | Toggle **bind mode** |
 | `U` `I` `O` `P` `J` `K` `L` `;` `,` `.` | Jump to that saved view — or, in bind mode, save the current view to it |
 | `Shift` + slot key (in bind mode) | Clear that slot |
@@ -19,18 +19,27 @@ the game's own conflict handling: bind a key that's already in use and the two
 actions swap. Saved locations follow the slot, not the key, so remapping a slot
 keeps whatever view you'd saved to it.
 
-The ten slot defaults sit under the right hand and steer clear of the base
-game's own bindings, which include `1`–`4`, `F1`–`F4`, `F11`, the arrows and the
-letters `B` `C` `E` `M` `N` `Q` `S`.
+Every default steers clear of the base game's own bindings, which are `1`–`4`,
+`F1`–`F4`, `F11`, the arrows, `Backspace` `Ctrl` `Esc` `Shift` `Space` `Tab`,
+`+`/`-` on the numpad, and the letters `B` `C` `E` `M` `N` `Q` `S`. The ten slot
+defaults also sit together under the right hand.
+
+**If you've rebound a base-game action onto one of these keys yourself**, the mod
+gives way: that slot starts with no key at all rather than quietly firing
+alongside yours, and you're told once on screen and in the log. Set it to
+whatever you like under Options → Controls and it behaves normally from then on.
+
+The mod has to check for itself, because the game only looks for duplicate keys
+when *you* rebind through its menu — never when a mod adds bindings at startup.
 
 ### The wheel
 
-**Hold `Page Down`**, flick the mouse towards a place and let go to fly there —
-you don't have to land on it, only point roughly its way. Releasing near the
-middle means "never mind".
+**Hold `T`**, flick the mouse towards a place and let go to fly there — you don't
+have to land on it, only point roughly its way. Releasing near the middle means
+"never mind".
 
-**Tap `Page Down`** instead and the wheel stays up to be clicked, which is how
-you edit it. With the wheel up, whatever you're pointing at can be:
+**Tap `T`** instead and the wheel stays up to be clicked, which is how you edit
+it. With the wheel up, whatever you're pointing at can be:
 
 | Input | What it does |
 | --- | --- |
@@ -45,9 +54,9 @@ only be filled. Renaming is a real text field, so selection, click-and-drag,
 `Ctrl`+arrows, `Ctrl`+`Backspace` and the clipboard all work, and the old name
 starts selected so typing replaces it.
 
-Right-click, `Esc`, clicking the middle, or pressing `Page Down` again all close
-it. While the wheel is up the game is held still — no panning, zooming, hotkeys
-or card dragging — and everything goes back to normal when it closes.
+Right-click, `Esc`, clicking the middle, or pressing `T` again all close it.
+While the wheel is up the game is held still — no panning, zooming, hotkeys or
+card dragging — and everything goes back to normal when it closes.
 
 Each place shows a photo of the view saved to it, taken at the moment you bound
 it. Places bound before this version have no photo and show their slot number
@@ -181,6 +190,14 @@ From there it's all public game API — no patching:
 
 It's built from bare `GameObject`s on the game's own overlay canvas, so it
 inherits the player's UI-scale setting and matches the game's look:
+
+- It gets a **nested canvas with `overrideSorting` and a high `sortingOrder`**,
+  so it draws over the pop-out panels for verbs and desk actions — those live on
+  canvases of their own, which sibling order can't reach past. The game never
+  sets a sorting order anywhere in its own code, so nothing of the game's can
+  collide. A nested canvas needs its own `GraphicRaycaster` too: graphics
+  register against their nearest canvas, so the parent's raycaster stops seeing
+  them as soon as one is added.
 
 - The overlay transform is private on `Meniscate`, but `DisplayInOverlayAtScreenCentre`
   reparents whatever it's handed — so [NativeUi.cs](src/NativeUi.cs) hands it a

@@ -87,6 +87,14 @@ namespace BookOfHoursLocationHotkeys
 		/// <summary>Opened with a tap, so it stays up instead of tracking the held key.</summary>
 		private bool _pinned;
 
+		/// <summary>
+		/// Whether we yet know if this is a tap or a hold. Until the key is released
+		/// or the tap threshold passes, it could be either, and the two want opposite
+		/// prompts - so the prompt stays blank rather than guessing and correcting
+		/// itself a moment later.
+		/// </summary>
+		private bool _modeDecided;
+
 		private float _openedAt;
 
 		/// <summary>Slot under the cursor, 1-based; 0 for none.</summary>
@@ -141,6 +149,7 @@ namespace BookOfHoursLocationHotkeys
 
 			_open = true;
 			_pinned = false;
+			_modeDecided = false;
 			_openedAt = Time.unscaledTime;
 			_hovered = 0;
 
@@ -206,12 +215,15 @@ namespace BookOfHoursLocationHotkeys
 			// press and release inside one frame is opened and released on separate
 			// frames, so the release event has already been and gone by the time we
 			// first look for it.
+			bool heldPastTapThreshold = Time.unscaledTime - _openedAt >= Mathf.Max(_config.RadialTapSeconds, 0f);
+
 			if (!_pinned && (radialReleased || !radialHeld))
 			{
-				if (Time.unscaledTime - _openedAt < Mathf.Max(_config.RadialTapSeconds, 0f))
+				if (!heldPastTapThreshold)
 				{
 					// Too quick to have been a hold: leave it up to be clicked.
 					_pinned = true;
+					DecideMode();
 				}
 				else
 				{
@@ -219,6 +231,12 @@ namespace BookOfHoursLocationHotkeys
 				}
 
 				return true;
+			}
+
+			// Still on the key past the threshold, so it's a hold after all.
+			if (!_modeDecided && heldPastTapThreshold)
+			{
+				DecideMode();
 			}
 
 			TickActionKeys();
@@ -251,6 +269,16 @@ namespace BookOfHoursLocationHotkeys
 			// Ctrl means "overwrite" however the slot was picked, held or clicked.
 			Keyboard keyboard = Keyboard.current;
 			Activate(_hovered, keyboard != null && keyboard.ctrlKey.isPressed);
+		}
+
+		/// <summary>
+		/// Tap or hold is now settled, so the prompt has something true to say.
+		/// Nothing else would redraw it until the hovered slot happened to change.
+		/// </summary>
+		private void DecideMode()
+		{
+			_modeDecided = true;
+			RefreshLabels();
 		}
 
 		private void Cancel()
@@ -434,7 +462,10 @@ namespace BookOfHoursLocationHotkeys
 
 			_renaming = true;
 			_renamingSlot = slot;
+
+			// Renaming settles it: you're editing, not mid-gesture.
 			_pinned = true;
+			_modeDecided = true;
 
 			_centreLabel.enabled = false;
 			_renameField.gameObject.SetActive(true);
@@ -560,6 +591,15 @@ namespace BookOfHoursLocationHotkeys
 			bool filled = _hovered > 0 && _actions.TryGetLocation(_hovered, out location);
 			_centreLabel.text = (_hovered <= 0) ? string.Empty : NameFor(_hovered, location);
 
+			// Tap and hold want opposite prompts, and for the first moment either is
+			// still possible. The name in the middle carries the feedback until we
+			// know which one this is.
+			if (!_modeDecided)
+			{
+				SetLegend(string.Empty);
+				return;
+			}
+
 			// Holding the key is one gesture, and every action below it needs a free
 			// mouse hand. Listing them while the wheel is still on the key would only
 			// offer things you can't reach, so the prompt stays put and just the name
@@ -584,7 +624,14 @@ namespace BookOfHoursLocationHotkeys
 		/// <summary>Keeps the legend's plate wrapped to whatever it's currently saying.</summary>
 		private void SetLegend(string text)
 		{
-			if (_legend.text == text)
+			// No text means no plate either, rather than an empty bordered box.
+			bool visible = !string.IsNullOrEmpty(text);
+			if (_legendPanel.gameObject.activeSelf != visible)
+			{
+				_legendPanel.gameObject.SetActive(visible);
+			}
+
+			if (!visible || _legend.text == text)
 			{
 				return;
 			}
@@ -663,6 +710,12 @@ namespace BookOfHoursLocationHotkeys
 
 			_root = NativeUi.MakeRect(parent, "LocationHotkeysWheel");
 			NativeUi.Fill(_root);
+
+			// Sibling order alone isn't enough: the pop-out panels for verbs and desk
+			// actions live on canvases of their own and would draw over us. Sorting
+			// order settles it across canvases, and the game never sets one anywhere,
+			// so a high value can't collide with anything of the game's own.
+			NativeUi.SortAbove(_root, NativeUi.SortOrderWheel);
 
 			Image scrim = _root.gameObject.AddComponent<Image>();
 			scrim.color = NativeUi.Scrim;

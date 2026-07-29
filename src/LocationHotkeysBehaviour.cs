@@ -27,6 +27,8 @@ namespace BookOfHoursLocationHotkeys
 
 		private bool _attachWarningLogged;
 
+		private bool _yieldWarningShown;
+
 		private HotkeyConfig _config;
 
 		private readonly GameBindings _bindings = new GameBindings();
@@ -121,6 +123,8 @@ namespace BookOfHoursLocationHotkeys
 				return;
 			}
 
+			WarnAboutYieldedKeysOnce();
+
 			if (_bindMode && Time.unscaledTime > _bindModeExpiresAt)
 			{
 				SetBindMode(false);
@@ -163,6 +167,25 @@ namespace BookOfHoursLocationHotkeys
 
 				return;
 			}
+		}
+
+		/// <summary>
+		/// Tells the player once, on the playfield, about keys we left unset because
+		/// they'd already bound the default to something of their own. The log line
+		/// goes out at registration, but that happens on the main menu where there's
+		/// nowhere to show it.
+		/// </summary>
+		private void WarnAboutYieldedKeysOnce()
+		{
+			if (_yieldWarningShown || _bindings.Yielded.Count == 0)
+			{
+				return;
+			}
+
+			_yieldWarningShown = true;
+			Toast(_bindings.Yielded.Count == 1
+				? "One Location Hotkeys key clashed with your keybinds, so it's unset. Options > Controls."
+				: _bindings.Yielded.Count + " Location Hotkeys keys clashed with your keybinds, so they're unset. Options > Controls.");
 		}
 
 		private static bool ModifierHeld(KeyNames.Modifier modifier)

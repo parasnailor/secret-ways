@@ -30,12 +30,20 @@ namespace BookOfHoursLocationHotkeys
 			return "lhslot" + slot;
 		}
 
-		/// <summary>Defaults only - once the player rebinds, the Setting entity wins.
-		/// Chosen to avoid the base game's own bindings. Index-aligned with ActionNames().</summary>
+		/// <summary>
+		/// Defaults only - once the player rebinds, the Setting entity wins.
+		/// Index-aligned with ActionNames().
+		///
+		/// None of these collide with the base game's own bindings, but nothing stops
+		/// them colliding with a player's *rebound* ones: the game only looks for
+		/// duplicates when rebinding through its options menu (KeybindSettingControlStrategy
+		/// .FindDuplicateBinding), never when actions are added. A collision means both
+		/// actions fire until the player rebinds one of them.
+		/// </summary>
 		private static readonly string[] DefaultPaths =
 		{
 			"<Keyboard>/pageUp",
-			"<Keyboard>/pageDown",
+			"<Keyboard>/t",
 			"<Keyboard>/u",
 			"<Keyboard>/i",
 			"<Keyboard>/o",
@@ -54,7 +62,13 @@ namespace BookOfHoursLocationHotkeys
 
 		private readonly Dictionary<string, InputAction> _actions = new Dictionary<string, InputAction>();
 
+		/// <summary>Actions whose default key was already taken, so they start unset.</summary>
+		private readonly List<string> _yielded = new List<string>();
+
 		public bool Ready { get; private set; }
+
+		/// <summary>Action ids left unbound because their default was already in use.</summary>
+		public IList<string> Yielded => _yielded;
 
 		private static IEnumerable<string> ActionNames()
 		{
@@ -101,7 +115,19 @@ namespace BookOfHoursLocationHotkeys
 				if (action == null)
 				{
 					action = map.AddAction(name, InputActionType.Button);
-					action.AddBinding(DefaultPaths[index], groups: BindingGroups);
+
+					// The binding slot has to exist either way: the options row reads
+					// action.bindings[i] to show and rebind the key, and would throw on
+					// an action with none. So always add it, then blank the path if
+					// something already has that key.
+					string path = DefaultPaths[index];
+					action.AddBinding(path, groups: BindingGroups);
+
+					if (IsPathAlreadyBound(asset, action, path))
+					{
+						action.ApplyBindingOverride(string.Empty);
+						_yielded.Add(name);
+					}
 				}
 
 				_actions[name] = action;
@@ -116,7 +142,46 @@ namespace BookOfHoursLocationHotkeys
 			ApplySavedOverrides();
 			Ready = true;
 			NoonUtility.Log("Location Hotkeys: registered " + _actions.Count + " actions in the game's keybindings.");
+
+			if (_yielded.Count > 0)
+			{
+				NoonUtility.LogWarning("Location Hotkeys: left " + _yielded.Count
+					+ " key(s) unset because you'd already bound their defaults to something else - "
+					+ string.Join(", ", _yielded.ToArray())
+					+ ". Set them under Options > Controls.");
+			}
+
 			return true;
+		}
+
+		/// <summary>
+		/// Whether anything else already answers to this key. Mirrors the game's own
+		/// KeybindSettingControlStrategy.FindDuplicateBinding, which it only runs when
+		/// rebinding through the options menu - never when actions are added, which is
+		/// why we have to check for ourselves.
+		/// </summary>
+		private static bool IsPathAlreadyBound(InputActionAsset asset, InputAction ours, string path)
+		{
+			foreach (InputActionMap actionMap in asset.actionMaps)
+			{
+				foreach (InputAction action in actionMap.actions)
+				{
+					if (action == ours)
+					{
+						continue;
+					}
+
+					foreach (InputBinding binding in action.bindings)
+					{
+						if (!binding.isComposite && binding.effectivePath == path)
+						{
+							return true;
+						}
+					}
+				}
+			}
+
+			return false;
 		}
 
 		/// <summary>
@@ -138,6 +203,10 @@ namespace BookOfHoursLocationHotkeys
 				if (!string.IsNullOrEmpty(saved))
 				{
 					entry.Value.ApplyBindingOverride(saved);
+
+					// The player has since given this one a key of its own, so whatever
+					// its default clashed with no longer matters.
+					_yielded.Remove(entry.Key);
 				}
 			}
 		}

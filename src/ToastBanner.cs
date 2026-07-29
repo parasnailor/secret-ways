@@ -121,6 +121,10 @@ namespace BookOfHoursLocationHotkeys
 			_root = NativeUi.MakeRect(parent, "LocationHotkeysBanner");
 			NativeUi.Anchor(_root, new Vector2(0.5f, 0f), new Vector2(0f, BottomOffset), new Vector2(520f, 60f));
 
+			// Above the game's windows, and above the wheel too - binding a slot from
+			// the wheel raises a toast while the wheel is still up.
+			NativeUi.SortAbove(_root, NativeUi.SortOrderBanner);
+
 			_root.gameObject.AddComponent<CanvasGroup>();
 			_fader = _root.gameObject.AddComponent<UnscaledFader>();
 
