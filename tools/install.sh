@@ -52,8 +52,24 @@ if [[ ! -d "$DATA" ]]; then
 fi
 
 mkdir -p "$MODS"
+
+# The game writes the Workshop published-file id into the installed folder when you
+# upload from Options > Mods. Rescue it into the repo before the wipe below, or the
+# next upload creates a second Workshop item instead of updating the first.
+CATALOGUE="serapeum_catalogue_number.txt"
+if [[ -f "$MODS/location_hotkeys/$CATALOGUE" && ! -f "$REPO/mod/$CATALOGUE" ]]; then
+	cp "$MODS/location_hotkeys/$CATALOGUE" "$REPO/mod/$CATALOGUE"
+	echo "Recorded Workshop item id $(cat "$REPO/mod/$CATALOGUE") in mod/$CATALOGUE - commit it."
+fi
+
 rm -rf "$MODS/location_hotkeys"
 cp -r "$STAGE" "$MODS/location_hotkeys"
+
+# Keeps the install correct when run against a stage built before the id existed.
+if [[ -f "$REPO/mod/$CATALOGUE" ]]; then
+	cp "$REPO/mod/$CATALOGUE" "$MODS/location_hotkeys/$CATALOGUE"
+fi
+
 echo "Installed $MODS/location_hotkeys"
 
 if [[ $ENABLE -eq 0 ]]; then

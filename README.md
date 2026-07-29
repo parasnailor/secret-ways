@@ -149,14 +149,129 @@ Nothing writes to the game install.
 
 Book of Hours will not load *any* DLL mod unless a gatekeeper mod named **GHIRBI**
 is installed and enabled — that's the game's own consent gate for running
-third-party code (`ModManager.Safety.IsDLLAllowed`). Get it from the Steam
-Workshop and enable it plus "Location Hotkeys" under Options → Mods.
+third-party code (`ModManager.Safety.IsDLLAllowed`). Get it from the [Steam
+Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3682369347) and
+enable it plus "Location Hotkeys" under Options → Mods.
 
 If you'd rather not go through Steam, `tools/install.sh --enable-dll-mods` writes
 a local GHIRBI folder and switches both mods on. Same consequence either way: with
 GHIRBI enabled, every enabled DLL mod runs arbitrary code in the game process.
 
 Restart the game after changing any of this — DLLs are loaded once during startup.
+
+## Publishing
+
+There's no external upload tool. The game publishes to the Workshop itself: every
+mod it found in your **local** `mods/` folder gets an upload button on its row under
+Options → Mods, and pressing it hands the folder to Steam. The button is hidden for
+mods that came *from* the Workshop, and hidden unless the game was launched through
+Steam — `ModEntry.SetUploadButtonState` checks both.
+
+What Steam ends up showing is drawn straight from the mod folder, so the listing is
+edited by editing files here rather than on the web:
+
+| Workshop listing | Comes from |
+| --- | --- |
+| Title | `synopsis.json` → `name` |
+| Description | `synopsis.json` → `description_long` |
+| Tags | `synopsis.json` → `tags` |
+| Thumbnail | `cover.png` |
+| The files themselves | the whole staged folder |
+
+`description_long` is never shown in-game, only on Steam, so it's written as a Steam
+page — BBCode and all. It's also **rewritten on every upload**, which cuts both
+ways: the file stays the single source of truth, but anything you edit on the web
+page is silently reverted the next time you publish. Edit `mod/synopsis.json`.
+
+### cover.png
+
+Required — `tools/build.sh` refuses to stage without it, because the game refuses to
+upload without it. A square PNG, 512×512 is plenty, and under 1MB (Steam's limit).
+The game also draws it as the icon on the mod's row under Options → Mods, which is
+the cheap way to confirm it's where the uploader will look for it: if you can see it
+in that list, the upload will find it.
+
+### Screenshots
+
+The game only ever sets the *primary* preview image, from `cover.png` — there's no
+way to push screenshots from inside it. Add those on the item's Workshop page, under
+the owner controls' *Add/Edit Images & Videos*. Steam keeps additional previews as
+separate, indexed entries from the primary one, so uploading again from the game
+replaces the thumbnail and leaves the screenshots alone.
+
+The easy way to get them: press Steam's screenshot key (F12 by default) while
+playing, which files them in the overlay's screenshot manager ready to attach. The
+wheel with a few slots filled in is the shot worth leading with.
+
+### Publishing the first time
+
+```sh
+tools/build.sh && tools/install.sh
+```
+
+Then launch through Steam, go to Options → Mods, and press upload on the Location
+Hotkeys row. The game creates the item, opens it in the Steam overlay, and writes
+its id to `serapeum_catalogue_number.txt` in the *installed* folder. If it's your
+first ever upload you'll be told to accept the Workshop terms — the item stays
+hidden until you do.
+
+On the item page, set it Public and add **GHIRBI** (`3682369347`) under the owner
+controls' *Add/Remove Required Items*. That's a one-time thing; see below.
+
+Then run `tools/install.sh` again. It copies the id back into `mod/` and says so —
+commit that file, and consider tagging the commit you published from.
+
+### Updating
+
+Bump `version` in `mod/synopsis.json` *and* `<Version>` in
+[LocationHotkeys.csproj](src/LocationHotkeys.csproj) — the second one is what the
+mods list shows next to the name, so they should agree. Then it's the same three
+steps: build, install, upload.
+
+Because `serapeum_catalogue_number.txt` is now in `mod/`, `build.sh` stages it and
+the game updates the existing item instead of making a new one. `install.sh` carries
+it in both directions, so neither script's `rm -rf` can lose it.
+
+### Declaring the dependency
+
+The game has no manifest field for prerequisites — `Mod.PopulateFromSynopsis` reads
+`name`, `author`, `version`, `description`, `description_long` and `tags`, and drops
+anything else on the floor. So GHIRBI is spelled out in four places instead: Steam's
+Required Items, the top of `description_long`, the short `description` that shows
+in-game, and this README.
+
+Required Items is the only one a machine reads, and it only needs setting once. It's
+a property of the published item, not of an upload — `StartItemUpdate` sends title,
+description, content, preview and tags and nothing else, so re-publishing can't
+clear it.
+
+There's no runtime check and there shouldn't be. Without a gatekeeper enabled the
+mod's toggle in Options → Mods isn't even interactive, so `Initialise()` never runs;
+a check inside it could never fire.
+
+The game *does* have a content-level `"$depends"` on individual entities
+(`EntityDataImportExtensions.DependenciesSatisfied`), but it's the wrong tool. It
+skips importing an entity, which would drop the keybind rows while the DLL kept
+running — worse than not loading at all. And it matches on `SerapeumCatalogueId`,
+which is the id file's contents when there is one and the mod's name otherwise: a
+subscribed GHIRBI is `3682369347`, while the local one `install.sh --enable-dll-mods`
+writes is `GHIRBI`. Either value breaks one of the two setups.
+
+### Pitfalls
+
+- **Losing the id file makes a duplicate.** No id file means "create a new item", so
+  a stray `rm` in `mod/` costs you a second listing with none of the subscribers.
+- **Two mods can't share a name.** Once it's published, subscribing to your own item
+  gives you a Workshop copy *and* `mods/location_hotkeys`;
+  `ModEntry.ToggleActivation` refuses to enable two mods with the same `name`. Keep
+  the local one enabled while developing, and unsubscribe to test the published one.
+- **Everything staged is published.** `SetItemContent` uploads the folder wholesale,
+  so keep it to `synopsis.json`, `cover.png`, `serapeum_catalogue_number.txt`,
+  `content/` and `dll/`. That's what `build.sh` wiping the stage each time is for.
+- **Tags have to be ones the game's Workshop knows.** Steam rejects unknown ones. If
+  an upload comes back with something other than success, empty `tags` and retry to
+  rule it out.
+- **Build before you publish.** `dist/` can easily be older than your last commit.
 
 ## How it works
 

@@ -1,9 +1,10 @@
 {
     "name": "Location Hotkeys",
-    "author": "Anonymous",
+    "author": "Captain Snail",
     "version": "1.4.0",
-
-    "description": "Bind spots in Hush House to keys, or pick them off a wheel, and jump straight back to them.",
-    "description_long": "Hold T for a wheel of your saved places, each with a photo and a name, and flick towards one to fly there. Or press Page Up to enter bind mode and press one of the ten location keys to save the current view to it, then press that key any other time to fly back. All twelve keys are rebindable under Options > Controls. Each playthrough keeps its own set of locations, stored in location_hotkeys.json next to your save file.",
-    "tags": [ "Quality of Life" ]
+    "description": "Save locations for quick navigation with a radial menu or hotkeys. Requires the GHIRBI gatekeeper mod.",
+    "description_long": "[h2]Requires GHIRBI[/h2]\n[b]Book of Hours will not load any DLL mod unless the GHIRBI gatekeeper mod is installed and enabled.[/b] That is the game's own consent gate for running third-party code. [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3682369347]Subscribe to GHIRBI[/url], then enable it and Location Hotkeys in game.\n\n[h2]Usage[/h2]\n[list]\n[*][b]Hold or tap T[/b] to open the radial menu; select an empty slot to save a location, or an occupied one to pan there\n[*][b]Page Up[/b] enters bind mode; press one of the ten location keys to bind the current view.\n[*][b]Press U I O P J K L ; , .[/b] to jump to a saved view.\n[/list]\n\n[h2]Hotkeys[/h2]\nAll twelve keys are rebindable under [b]Options > Controls[/b], in a LOCATION HOTKEYS section below the base game's bindings.\n\n[h2]Savegames and settings[/h2]\nEach playthrough keeps its own locations. Hotkey configuration lives in [i]location_hotkeys.json[/i] next to your saves, with thumbnails in [i]location_hotkeys_previews/[/i]. Both are safe to delete.\n\n",
+    "tags": [
+        "Quality of Life"
+    ]
 }
