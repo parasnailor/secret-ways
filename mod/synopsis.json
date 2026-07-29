@@ -1,9 +1,9 @@
 {
     "name": "Location Hotkeys",
     "author": "Anonymous",
-    "version": "1.3.0",
+    "version": "1.4.0",
 
-    "description": "Bind spots in Hush House to keys and jump straight back to them.",
-    "description_long": "Press Page Up to enter bind mode, then press one of the ten location keys to save the current view to it. Press that key at any other time to fly the camera back. All eleven keys are rebindable under Options > Controls. Each playthrough keeps its own set of locations, stored in location_hotkeys.json next to your save file.",
+    "description": "Bind spots in Hush House to keys, or pick them off a wheel, and jump straight back to them.",
+    "description_long": "Hold Page Down for a wheel of your saved places, each with a photo and a name, and flick towards one to fly there. Or press Page Up to enter bind mode and press one of the ten location keys to save the current view to it, then press that key any other time to fly back. All twelve keys are rebindable under Options > Controls. Each playthrough keeps its own set of locations, stored in location_hotkeys.json next to your save file.",
     "tags": [ "Quality of Life" ]
 }

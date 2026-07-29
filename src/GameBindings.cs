@@ -19,6 +19,8 @@ namespace BookOfHoursLocationHotkeys
 	{
 		public const string BindModeAction = "lhbindmode";
 
+		public const string RadialAction = "lhradial";
+
 		public const int SlotCount = 10;
 
 		/// <summary>Slot n's action name. Locations are keyed by these, not by key
@@ -29,10 +31,11 @@ namespace BookOfHoursLocationHotkeys
 		}
 
 		/// <summary>Defaults only - once the player rebinds, the Setting entity wins.
-		/// Chosen to avoid the base game's own bindings.</summary>
+		/// Chosen to avoid the base game's own bindings. Index-aligned with ActionNames().</summary>
 		private static readonly string[] DefaultPaths =
 		{
 			"<Keyboard>/pageUp",
+			"<Keyboard>/pageDown",
 			"<Keyboard>/u",
 			"<Keyboard>/i",
 			"<Keyboard>/o",
@@ -56,6 +59,7 @@ namespace BookOfHoursLocationHotkeys
 		private static IEnumerable<string> ActionNames()
 		{
 			yield return BindModeAction;
+			yield return RadialAction;
 			for (int slot = 1; slot <= SlotCount; slot++)
 			{
 				yield return SlotAction(slot);
@@ -141,6 +145,17 @@ namespace BookOfHoursLocationHotkeys
 		public bool WasPressedThisFrame(string actionName)
 		{
 			return _actions.TryGetValue(actionName, out InputAction action) && action.enabled && action.triggered;
+		}
+
+		/// <summary>For the radial's hold-to-open: true for as long as the key is down.</summary>
+		public bool IsHeld(string actionName)
+		{
+			return _actions.TryGetValue(actionName, out InputAction action) && action.enabled && action.IsPressed();
+		}
+
+		public bool WasReleasedThisFrame(string actionName)
+		{
+			return _actions.TryGetValue(actionName, out InputAction action) && action.enabled && action.WasReleasedThisFrame();
 		}
 
 		/// <summary>The key currently bound to an action, for the on-screen prompt.</summary>

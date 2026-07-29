@@ -15,7 +15,7 @@ namespace BookOfHoursLocationHotkeys
 	/// Watches the mod's keybindings once the playfield is up: binds the current
 	/// camera position to a slot, and flies the camera back to it on demand.
 	/// </summary>
-	public class LocationHotkeysBehaviour : MonoBehaviour
+	public class LocationHotkeysBehaviour : MonoBehaviour, ILocationActions
 	{
 		private const float ToastSeconds = 2f;
 
@@ -39,21 +39,21 @@ namespace BookOfHoursLocationHotkeys
 
 		private float _bindModeExpiresAt;
 
-		private string _toast;
-
-		private float _toastExpiresAt;
-
 		private int _consecutiveErrors;
 
-		private Texture2D _panelTexture;
+		private readonly ToastBanner _banner = new ToastBanner();
 
-		private GUIStyle _panelStyle;
+		private LocationPreviews _previews;
+
+		private RadialMenu _radial;
 
 		public void Awake()
 		{
 			_config = HotkeyConfig.Load();
 			_quickBindModifier = KeyNames.ParseModifier(_config.QuickBindModifier);
 			_clearModifier = KeyNames.ParseModifier(_config.ClearModifier);
+			_previews = new LocationPreviews(_config, this);
+			_radial = new RadialMenu(_config, this);
 			NoonUtility.Log("Location Hotkeys: config at " + HotkeyConfig.Path);
 		}
 
@@ -78,6 +78,9 @@ namespace BookOfHoursLocationHotkeys
 
 		private void Tick()
 		{
+			// Keeps timed toasts fading out even once we've left the playfield.
+			_banner.Tick();
+
 			// Register with the game's keybindings as soon as ControlsController
 			// exists, which is well before any playfield: Options -> Controls is
 			// reachable from the main menu, and the rows there read these actions.
@@ -89,16 +92,38 @@ namespace BookOfHoursLocationHotkeys
 			}
 
 			// Outside the playfield - main menu, loading, the debug console, a text
-			// field - the slot keys aren't ours to read.
-			if (!registered || !PlayfieldIsActive() || Watchman.DebugIsVisible() || TextEntryHasFocus())
+			// field - the slot keys aren't ours to read. The wheel is the exception:
+			// renaming focuses a text field of our own, and nothing else can be
+			// taking focus while the wheel is holding the game still.
+			if (!registered || !PlayfieldIsActive() || Watchman.DebugIsVisible()
+				|| (TextEntryHasFocus() && !_radial.IsOpen))
 			{
-				_bindMode = false;
+				SetBindMode(false);
+				_radial.Close();
+				return;
+			}
+
+			// The wheel is modal: while it's up it owns the mouse and the keyboard,
+			// including our own slot keys.
+			bool radialPressed = _bindings.WasPressedThisFrame(GameBindings.RadialAction);
+			if (_radial.Tick(
+				_bindings.IsHeld(GameBindings.RadialAction),
+				_bindings.WasReleasedThisFrame(GameBindings.RadialAction),
+				radialPressed))
+			{
+				return;
+			}
+
+			if (radialPressed)
+			{
+				SetBindMode(false);
+				_radial.Open();
 				return;
 			}
 
 			if (_bindMode && Time.unscaledTime > _bindModeExpiresAt)
 			{
-				_bindMode = false;
+				SetBindMode(false);
 				Toast("Bind mode cancelled.");
 			}
 
@@ -117,7 +142,7 @@ namespace BookOfHoursLocationHotkeys
 
 				if (_bindMode)
 				{
-					_bindMode = false;
+					SetBindMode(false);
 					if (ModifierHeld(_clearModifier))
 					{
 						Clear(slot);
@@ -148,14 +173,37 @@ namespace BookOfHoursLocationHotkeys
 
 		private void ToggleBindMode()
 		{
-			_bindMode = !_bindMode;
 			if (_bindMode)
 			{
-				_bindModeExpiresAt = Time.unscaledTime + Mathf.Max(_config.BindModeTimeoutSeconds, 1f);
+				SetBindMode(false);
+				Toast("Bind mode cancelled.");
 			}
 			else
 			{
-				Toast("Bind mode cancelled.");
+				SetBindMode(true);
+			}
+		}
+
+		/// <summary>Single place bind mode flips, so the banner can't drift out of step with it.</summary>
+		private void SetBindMode(bool on)
+		{
+			if (on == _bindMode)
+			{
+				return;
+			}
+
+			_bindMode = on;
+			if (on)
+			{
+				_bindModeExpiresAt = Time.unscaledTime + Mathf.Max(_config.BindModeTimeoutSeconds, 1f);
+				if (_config.ShowOverlay)
+				{
+					_banner.ShowPersistent(BindModePrompt());
+				}
+			}
+			else
+			{
+				_banner.Hide();
 			}
 		}
 
@@ -175,13 +223,23 @@ namespace BookOfHoursLocationHotkeys
 				return;
 			}
 
+			string slotAction = GameBindings.SlotAction(slot);
+
+			// Rebinding a slot moves the view, not the name the player gave the place.
+			_config.TryGetLocation(playthroughId, slotAction, out SavedLocation existing);
+
 			Vector3 position = attached.transform.position;
-			_config.SetLocation(playthroughId, label, GameBindings.SlotAction(slot), new SavedLocation
+			_config.SetLocation(playthroughId, label, slotAction, new SavedLocation
 			{
 				X = position.x,
 				Y = position.y,
-				Z = position.z
+				Z = position.z,
+				Label = (existing == null) ? null : existing.Label
 			});
+
+			// The camera is already here and the scene is already in the right zoom
+			// state for this height, so this is the one moment the thumbnail is honest.
+			_previews.Capture(playthroughId, slotAction);
 
 			Toast("Saved this view to " + SlotLabel(slot) + ".");
 		}
@@ -194,8 +252,10 @@ namespace BookOfHoursLocationHotkeys
 				return;
 			}
 
-			if (_config.ClearLocation(playthroughId, GameBindings.SlotAction(slot)))
+			string slotAction = GameBindings.SlotAction(slot);
+			if (_config.ClearLocation(playthroughId, slotAction))
 			{
+				_previews.Delete(playthroughId, slotAction);
 				Toast("Cleared " + SlotLabel(slot) + ".");
 			}
 			else
@@ -271,24 +331,9 @@ namespace BookOfHoursLocationHotkeys
 
 		private void Toast(string message)
 		{
-			_toast = message;
-			_toastExpiresAt = Time.unscaledTime + ToastSeconds;
-		}
-
-		public void OnGUI()
-		{
-			if (_config == null || !_config.ShowOverlay)
+			if (_config != null && _config.ShowOverlay)
 			{
-				return;
-			}
-
-			if (_bindMode)
-			{
-				DrawPanel(BindModePrompt());
-			}
-			else if (_toast != null && Time.unscaledTime < _toastExpiresAt)
-			{
-				DrawPanel(_toast);
+				_banner.Show(message, ToastSeconds);
 			}
 		}
 
@@ -309,48 +354,76 @@ namespace BookOfHoursLocationHotkeys
 			return line;
 		}
 
-		private void DrawPanel(string text)
+		// --- ILocationActions: what the wheel is allowed to ask of us. ---
+
+		string ILocationActions.SlotKeyLabel(int slot)
 		{
-			EnsureStyle();
-
-			Vector2 size = _panelStyle.CalcSize(new GUIContent(text));
-			float width = Mathf.Min(size.x + 32f, Screen.width - 40f);
-			float height = size.y + 20f;
-			Rect rect = new Rect((Screen.width - width) / 2f, Screen.height - height - 48f, width, height);
-
-			GUI.Box(rect, GUIContent.none, _panelStyle);
-			GUI.Label(rect, text, _panelStyle);
+			return SlotLabel(slot);
 		}
 
-		private void EnsureStyle()
+		bool ILocationActions.TryGetLocation(int slot, out SavedLocation location)
 		{
-			// GUI styles can't be built in Awake - OnGUI is the first point GUI.skin exists.
-			if (_panelStyle != null && _panelTexture != null)
+			location = null;
+			return Playthrough.TryGetCurrent(out string playthroughId, out string _)
+				&& _config.TryGetLocation(playthroughId, GameBindings.SlotAction(slot), out location);
+		}
+
+		Texture2D ILocationActions.PreviewFor(int slot)
+		{
+			if (!Playthrough.TryGetCurrent(out string playthroughId, out string _))
+			{
+				return null;
+			}
+
+			return _previews.Get(playthroughId, GameBindings.SlotAction(slot));
+		}
+
+		void ILocationActions.JumpToSlot(int slot)
+		{
+			Jump(slot);
+		}
+
+		void ILocationActions.BindSlot(int slot)
+		{
+			Bind(slot);
+		}
+
+		void ILocationActions.ClearSlot(int slot)
+		{
+			Clear(slot);
+		}
+
+		void ILocationActions.RefreshPreview(int slot)
+		{
+			string slotAction = GameBindings.SlotAction(slot);
+			if (!Playthrough.TryGetCurrent(out string playthroughId, out string _)
+				|| !_config.TryGetLocation(playthroughId, slotAction, out SavedLocation location))
 			{
 				return;
 			}
 
-			_panelTexture = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
-			_panelTexture.SetPixel(0, 0, new Color(0.05f, 0.04f, 0.03f, 0.88f));
-			_panelTexture.Apply();
+			_previews.RefreshOnArrival(playthroughId, slotAction, location);
+			Toast("Taking a new photo of " + location.DisplayName(slot) + ".");
+		}
 
-			_panelStyle = new GUIStyle(GUI.skin.label)
+		void ILocationActions.RenameSlot(int slot, string name)
+		{
+			if (!Playthrough.TryGetCurrent(out string playthroughId, out string _)
+				|| !_config.TryGetLocation(playthroughId, GameBindings.SlotAction(slot), out SavedLocation location))
 			{
-				alignment = TextAnchor.MiddleCenter,
-				fontSize = 16,
-				wordWrap = false,
-				padding = new RectOffset(16, 16, 10, 10)
-			};
-			_panelStyle.normal.background = _panelTexture;
-			_panelStyle.normal.textColor = new Color(0.93f, 0.87f, 0.72f);
+				return;
+			}
+
+			// TryGetLocation hands back the stored object, so this is the stored name.
+			location.Label = string.IsNullOrEmpty(name) ? null : name;
+			_config.Save();
 		}
 
 		public void OnDestroy()
 		{
-			if (_panelTexture != null)
-			{
-				Destroy(_panelTexture);
-			}
+			_banner.Destroy();
+			_radial.Destroy();
+			_previews.Destroy();
 		}
 	}
 }

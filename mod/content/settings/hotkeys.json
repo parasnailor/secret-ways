@@ -15,6 +15,13 @@
 		},
 
 		{
+			"id": "lhradial",
+			"tabid": "UI_CONTROLS",
+			"hint": "UI_KB_LH_RADIAL",
+			"datatype": "String"
+		},
+
+		{
 			"id": "lhslot1",
 			"tabid": "UI_CONTROLS",
 			"hint": "UI_KB_LH_SLOT1",

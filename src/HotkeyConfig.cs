@@ -16,11 +16,18 @@ namespace BookOfHoursLocationHotkeys
 		/// <summary>Camera z, which in this game is the zoom height (negative).</summary>
 		public float Z;
 
-		/// <summary>Free-text note; the mod never writes this, but it survives round-trips.</summary>
+		/// <summary>What the player calls this place. Shown on the wheel and editable
+		/// there; empty falls back to the slot number.</summary>
 		public string Label;
 
 		[JsonIgnore]
 		public Vector2 TablePosition => new Vector2(X, Y);
+
+		/// <summary>What to call this place on screen, for a slot that has one saved.</summary>
+		public string DisplayName(int slot)
+		{
+			return string.IsNullOrEmpty(Label) ? "Location " + slot : Label;
+		}
 	}
 
 	/// <summary>One playthrough's saved locations, keyed by slot action id.</summary>
@@ -69,6 +76,21 @@ namespace BookOfHoursLocationHotkeys
 
 		/// <summary>Draw the bind-mode banner and the confirmation toasts.</summary>
 		public bool ShowOverlay = true;
+
+		/// <summary>How far the wheel's slots sit from its centre, in reference pixels.</summary>
+		public float RadialRadius = 260f;
+
+		/// <summary>Hold the wheel key longer than this and releasing it picks whatever
+		/// the mouse points at; let go sooner and the wheel stays up to be clicked.</summary>
+		public float RadialTapSeconds = 0.25f;
+
+		/// <summary>Show thumbnails on the wheel. Off draws slots as plain plates.</summary>
+		public bool ShowRadialPreviews = true;
+
+		/// <summary>Size of the captured thumbnails, in pixels.</summary>
+		public int PreviewWidth = 256;
+
+		public int PreviewHeight = 160;
 
 		/// <summary>Playthrough id (see Playthrough.TryGetCurrent) -> that run's locations.
 		/// Scoped per run rather than shared, so a new game starts with nothing bound.</summary>

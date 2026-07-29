@@ -5,6 +5,7 @@
 			"uilabels$add": {
 				"UI_KB_LH_HEADER": "LOCATION HOTKEYS",
 				"UI_KB_LH_BINDMODE": "Bind mode (then press a location key)",
+				"UI_KB_LH_RADIAL": "Open the location wheel (hold, or tap to pin)",
 				"UI_KB_LH_SLOT1": "Go to location 1",
 				"UI_KB_LH_SLOT2": "Go to location 2",
 				"UI_KB_LH_SLOT3": "Go to location 3",
