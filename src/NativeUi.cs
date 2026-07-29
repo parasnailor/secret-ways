@@ -306,6 +306,19 @@ namespace BookOfHoursLocationHotkeys
 			return panel;
 		}
 
+		/// <summary>
+		/// A rounded window that clips whatever is put inside it, for a photo that
+		/// would otherwise square off the corners of the panel it sits in. The shape
+		/// is only ever stencilled, never drawn, so its colour doesn't matter.
+		/// </summary>
+		public static RectTransform MakeMask(Transform parent, string name, int radius)
+		{
+			Image shape = MakeImage(parent, name, RoundedRect(radius), Color.white);
+			Mask mask = shape.gameObject.AddComponent<Mask>();
+			mask.showMaskGraphic = false;
+			return shape.rectTransform;
+		}
+
 		public static RectTransform MakeRect(Transform parent, string name)
 		{
 			GameObject go = new GameObject(name, typeof(RectTransform));

@@ -617,7 +617,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 
 			SetLegend(filled
-				? "Click: Go  ·  Ctrl+Click: Save this view here  ·  F2: Rename  ·  Del: Clear  ·  R: New photo"
+				? "Click: Go  ·  Ctrl+Click: Save this view here  ·  F2: Rename  ·  Del: Clear  ·  R: Refresh preview"
 				: "Click: Save this view here");
 		}
 
@@ -830,10 +830,16 @@ namespace BookOfHoursLocationHotkeys
 			wedge.Plate = panel.Fill;
 			wedge.Border = panel.Border;
 
-			RectTransform previewRect = NativeUi.MakeRect(panel.Root, "Preview");
+			// The photo is clipped to the plate's own curve rather than squaring off
+			// inside it. Radius 8 against the plate's 12 keeps the inset even round
+			// the corners as well as along the sides.
+			RectTransform previewMask = NativeUi.MakeMask(panel.Root, "PreviewMask", 8);
+			NativeUi.Fill(previewMask);
+			previewMask.offsetMin = new Vector2(4f, 4f);
+			previewMask.offsetMax = new Vector2(-4f, -4f);
+
+			RectTransform previewRect = NativeUi.MakeRect(previewMask, "Preview");
 			NativeUi.Fill(previewRect);
-			previewRect.offsetMin = new Vector2(4f, 4f);
-			previewRect.offsetMax = new Vector2(-4f, -4f);
 			wedge.Preview = previewRect.gameObject.AddComponent<RawImage>();
 			wedge.Preview.raycastTarget = false;
 
