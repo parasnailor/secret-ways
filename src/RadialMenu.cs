@@ -8,7 +8,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>What the wheel needs from the mod to show and act on slots.</summary>
 	public interface ILocationActions
@@ -708,7 +708,7 @@ namespace BookOfHoursLocationHotkeys
 				return false;
 			}
 
-			_root = NativeUi.MakeRect(parent, "LocationHotkeysWheel");
+			_root = NativeUi.MakeRect(parent, "SecretWaysWheel");
 			NativeUi.Fill(_root);
 
 			// Sibling order alone isn't enough: the pop-out panels for verbs and desk

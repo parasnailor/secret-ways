@@ -5,7 +5,7 @@ using System.IO;
 using SecretHistories.UI;
 using UnityEngine;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>
 	/// Thumbnails of saved views, written next to the config as PNGs under a folder
@@ -19,7 +19,7 @@ namespace BookOfHoursLocationHotkeys
 	/// </summary>
 	public class LocationPreviews
 	{
-		private const string DirectoryName = "location_hotkeys_previews";
+		private const string DirectoryName = "secret_ways_previews";
 
 		private readonly Dictionary<string, Texture2D> _cache = new Dictionary<string, Texture2D>();
 
@@ -85,7 +85,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 			catch (Exception e)
 			{
-				NoonUtility.LogWarning("Location Hotkeys: couldn't read the preview for " + slotAction + ": " + e.Message);
+				NoonUtility.LogWarning("Secret Ways: couldn't read the preview for " + slotAction + ": " + e.Message);
 				_missing.Add(key);
 				return null;
 			}
@@ -143,7 +143,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 			catch (Exception e)
 			{
-				NoonUtility.LogWarning("Location Hotkeys: couldn't capture a preview for " + slotAction + ": " + e.Message);
+				NoonUtility.LogWarning("Secret Ways: couldn't capture a preview for " + slotAction + ": " + e.Message);
 			}
 			finally
 			{
@@ -209,7 +209,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 			catch (Exception e)
 			{
-				NoonUtility.LogWarning("Location Hotkeys: couldn't delete the preview for " + slotAction + ": " + e.Message);
+				NoonUtility.LogWarning("Secret Ways: couldn't delete the preview for " + slotAction + ": " + e.Message);
 			}
 
 			Forget(playthroughId, slotAction);

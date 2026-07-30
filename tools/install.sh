@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-STAGE="$REPO/dist/location_hotkeys"
+STAGE="$REPO/dist/secret_ways"
 
 ENABLE=0
 DATA=""
@@ -57,26 +57,26 @@ mkdir -p "$MODS"
 # upload from Options > Mods. Rescue it into the repo before the wipe below, or the
 # next upload creates a second Workshop item instead of updating the first.
 CATALOGUE="serapeum_catalogue_number.txt"
-if [[ -f "$MODS/location_hotkeys/$CATALOGUE" && ! -f "$REPO/mod/$CATALOGUE" ]]; then
-	cp "$MODS/location_hotkeys/$CATALOGUE" "$REPO/mod/$CATALOGUE"
+if [[ -f "$MODS/secret_ways/$CATALOGUE" && ! -f "$REPO/mod/$CATALOGUE" ]]; then
+	cp "$MODS/secret_ways/$CATALOGUE" "$REPO/mod/$CATALOGUE"
 	echo "Recorded Workshop item id $(cat "$REPO/mod/$CATALOGUE") in mod/$CATALOGUE - commit it."
 fi
 
-rm -rf "$MODS/location_hotkeys"
-cp -r "$STAGE" "$MODS/location_hotkeys"
+rm -rf "$MODS/secret_ways"
+cp -r "$STAGE" "$MODS/secret_ways"
 
 # Keeps the install correct when run against a stage built before the id existed.
 if [[ -f "$REPO/mod/$CATALOGUE" ]]; then
-	cp "$REPO/mod/$CATALOGUE" "$MODS/location_hotkeys/$CATALOGUE"
+	cp "$REPO/mod/$CATALOGUE" "$MODS/secret_ways/$CATALOGUE"
 fi
 
-echo "Installed $MODS/location_hotkeys"
+echo "Installed $MODS/secret_ways"
 
 if [[ $ENABLE -eq 0 ]]; then
 	cat <<EOF
 
 Not enabled yet. Either:
-  - enable "Location Hotkeys" and the GHIRBI gatekeeper in-game under
+  - enable "Secret Ways" and the GHIRBI gatekeeper in-game under
     Options > Mods (GHIRBI is on the Steam Workshop), or
   - re-run this script as: tools/install.sh --enable-dll-mods
 EOF
@@ -101,13 +101,13 @@ EOF
 # mods.txt is one enabled mod id (folder name) per line.
 ENABLED="$DATA/mods.txt"
 touch "$ENABLED"
-for id in ghirbi location_hotkeys; do
+for id in ghirbi secret_ways; do
 	grep -qxF "$id" "$ENABLED" || echo "$id" >> "$ENABLED"
 done
 
 cat <<EOF
 
-Enabled GHIRBI + Location Hotkeys in $ENABLED
+Enabled GHIRBI + Secret Ways in $ENABLED
 
   GHIRBI is the game's consent gate for DLL mods. With it on, any enabled DLL
   mod runs arbitrary code in the game process. Turn it off under Options > Mods

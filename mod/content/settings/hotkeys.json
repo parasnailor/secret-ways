@@ -1,93 +1,93 @@
 {
 	"settings": [
 		{
-			"id": "text_lhheader",
+			"id": "text_swheader",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_HEADER",
+			"hint": "UI_KB_SW_HEADER",
 			"ui": "TextLine"
 		},
 
 		{
-			"id": "lhbindmode",
+			"id": "swbindmode",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_BINDMODE",
+			"hint": "UI_KB_SW_BINDMODE",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhradial",
+			"id": "swradial",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_RADIAL",
+			"hint": "UI_KB_SW_RADIAL",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot1",
+			"id": "swslot1",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT1",
+			"hint": "UI_KB_SW_SLOT1",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot2",
+			"id": "swslot2",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT2",
+			"hint": "UI_KB_SW_SLOT2",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot3",
+			"id": "swslot3",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT3",
+			"hint": "UI_KB_SW_SLOT3",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot4",
+			"id": "swslot4",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT4",
+			"hint": "UI_KB_SW_SLOT4",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot5",
+			"id": "swslot5",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT5",
+			"hint": "UI_KB_SW_SLOT5",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot6",
+			"id": "swslot6",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT6",
+			"hint": "UI_KB_SW_SLOT6",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot7",
+			"id": "swslot7",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT7",
+			"hint": "UI_KB_SW_SLOT7",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot8",
+			"id": "swslot8",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT8",
+			"hint": "UI_KB_SW_SLOT8",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot9",
+			"id": "swslot9",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT9",
+			"hint": "UI_KB_SW_SLOT9",
 			"datatype": "String"
 		},
 
 		{
-			"id": "lhslot10",
+			"id": "swslot10",
 			"tabid": "UI_CONTROLS",
-			"hint": "UI_KB_LH_SLOT10",
+			"hint": "UI_KB_SW_SLOT10",
 			"datatype": "String"
 		}
 	]

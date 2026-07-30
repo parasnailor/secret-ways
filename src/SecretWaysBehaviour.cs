@@ -9,13 +9,13 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>
 	/// Watches the mod's keybindings once the playfield is up: binds the current
 	/// camera position to a slot, and flies the camera back to it on demand.
 	/// </summary>
-	public class LocationHotkeysBehaviour : MonoBehaviour, ILocationActions
+	public class SecretWaysBehaviour : MonoBehaviour, ILocationActions
 	{
 		private const float ToastSeconds = 2f;
 
@@ -56,7 +56,7 @@ namespace BookOfHoursLocationHotkeys
 			_clearModifier = KeyNames.ParseModifier(_config.ClearModifier);
 			_previews = new LocationPreviews(_config, this);
 			_radial = new RadialMenu(_config, this);
-			NoonUtility.Log("Location Hotkeys: config at " + HotkeyConfig.Path);
+			NoonUtility.Log("Secret Ways: config at " + HotkeyConfig.Path);
 		}
 
 		public void Update()
@@ -69,10 +69,10 @@ namespace BookOfHoursLocationHotkeys
 			catch (Exception e)
 			{
 				_consecutiveErrors++;
-				NoonUtility.LogWarning("Location Hotkeys: " + e);
+				NoonUtility.LogWarning("Secret Ways: " + e);
 				if (_consecutiveErrors >= MaxConsecutiveErrors)
 				{
-					NoonUtility.LogWarning("Location Hotkeys: too many consecutive errors; disabling the mod for this session.");
+					NoonUtility.LogWarning("Secret Ways: too many consecutive errors; disabling the mod for this session.");
 					enabled = false;
 				}
 			}
@@ -90,7 +90,7 @@ namespace BookOfHoursLocationHotkeys
 			if (!registered && !_attachWarningLogged && Time.unscaledTime > AttachWarningSeconds)
 			{
 				_attachWarningLogged = true;
-				NoonUtility.LogWarning("Location Hotkeys: no ControlsController after " + AttachWarningSeconds + "s, so the keys were never registered - the Options > Controls rows will read blank and the hotkeys won't fire.");
+				NoonUtility.LogWarning("Secret Ways: no ControlsController after " + AttachWarningSeconds + "s, so the keys were never registered - the Options > Controls rows will read blank and the hotkeys won't fire.");
 			}
 
 			// Outside the playfield - main menu, loading, the debug console, a text
@@ -184,8 +184,8 @@ namespace BookOfHoursLocationHotkeys
 
 			_yieldWarningShown = true;
 			Toast(_bindings.Yielded.Count == 1
-				? "One Location Hotkeys key clashed with your keybinds, so it's unset. Options > Controls."
-				: _bindings.Yielded.Count + " Location Hotkeys keys clashed with your keybinds, so they're unset. Options > Controls.");
+				? "One Secret Ways key clashed with your keybinds, so it's unset. Options > Controls."
+				: _bindings.Yielded.Count + " Secret Ways keys clashed with your keybinds, so they're unset. Options > Controls.");
 		}
 
 		private static bool ModifierHeld(KeyNames.Modifier modifier)

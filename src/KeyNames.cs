@@ -1,6 +1,6 @@
 using UnityEngine.InputSystem;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>
 	/// The slot and bind-mode keys live in the game's own keybindings now; this is

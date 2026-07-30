@@ -4,7 +4,7 @@ using System.IO;
 using Newtonsoft.Json;
 using UnityEngine;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>A camera position saved against a slot key.</summary>
 	public class SavedLocation
@@ -51,7 +51,7 @@ namespace BookOfHoursLocationHotkeys
 		/// duration of zero, CamOperator's lerp loop never runs a single iteration.</summary>
 		private const float MinimumTravelSeconds = 0.05f;
 
-		private const string FileName = "location_hotkeys.json";
+		private const string FileName = "secret_ways.json";
 
 		/// <summary>Bumped when the file's shape changes, so Load can migrate it.</summary>
 		public const int CurrentVersion = 3;
@@ -117,7 +117,7 @@ namespace BookOfHoursLocationHotkeys
 				HotkeyConfig loaded = JsonConvert.DeserializeObject<HotkeyConfig>(File.ReadAllText(Path));
 				if (loaded == null)
 				{
-					NoonUtility.LogWarning("Location Hotkeys: " + Path + " is empty; using defaults.");
+					NoonUtility.LogWarning("Secret Ways: " + Path + " is empty; using defaults.");
 					return new HotkeyConfig { Version = CurrentVersion };
 				}
 
@@ -138,7 +138,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 			catch (Exception e)
 			{
-				NoonUtility.LogWarning("Location Hotkeys: couldn't read " + Path + " (" + e.Message + "); using defaults. The existing file will not be overwritten until you next bind something.");
+				NoonUtility.LogWarning("Secret Ways: couldn't read " + Path + " (" + e.Message + "); using defaults. The existing file will not be overwritten until you next bind something.");
 				return new HotkeyConfig { Version = CurrentVersion };
 			}
 		}
@@ -156,11 +156,11 @@ namespace BookOfHoursLocationHotkeys
 			{
 				string backup = Path + ".pre-v3.bak";
 				File.Copy(Path, backup, true);
-				NoonUtility.Log("Location Hotkeys: saved locations are now per-playthrough, so the old shared ones were cleared. The previous file is at " + backup + ".");
+				NoonUtility.Log("Secret Ways: saved locations are now per-playthrough, so the old shared ones were cleared. The previous file is at " + backup + ".");
 			}
 			catch (Exception e)
 			{
-				NoonUtility.LogWarning("Location Hotkeys: saved locations are now per-playthrough, so the old shared ones were cleared, but the backup couldn't be written (" + e.Message + ").");
+				NoonUtility.LogWarning("Secret Ways: saved locations are now per-playthrough, so the old shared ones were cleared, but the backup couldn't be written (" + e.Message + ").");
 			}
 		}
 
@@ -224,7 +224,7 @@ namespace BookOfHoursLocationHotkeys
 			}
 			catch (Exception e)
 			{
-				NoonUtility.LogWarning("Location Hotkeys: couldn't write " + Path + ": " + e.Message);
+				NoonUtility.LogWarning("Secret Ways: couldn't write " + Path + ": " + e.Message);
 			}
 		}
 	}

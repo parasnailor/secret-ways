@@ -2,7 +2,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>
 	/// The bind-mode banner and the confirmation toasts, drawn on the game's own
@@ -118,7 +118,7 @@ namespace BookOfHoursLocationHotkeys
 				return false;
 			}
 
-			_root = NativeUi.MakeRect(parent, "LocationHotkeysBanner");
+			_root = NativeUi.MakeRect(parent, "SecretWaysBanner");
 			NativeUi.Anchor(_root, new Vector2(0.5f, 0f), new Vector2(0f, BottomOffset), new Vector2(520f, 60f));
 
 			// Above the game's windows, and above the wheel too - binding a slot from

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Build the mod and stage a ready-to-install mod folder in dist/location_hotkeys.
+# Build the mod and stage a ready-to-install mod folder in dist/secret_ways.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-STAGE="$REPO/dist/location_hotkeys"
+STAGE="$REPO/dist/secret_ways"
 
 if [[ ! -f "$REPO/ref/lib/SecretHistories.Main.dll" ]]; then
 	echo "ref/lib is empty - run tools/sync-refs.sh first." >&2
@@ -17,14 +17,16 @@ if [[ ! -f "$REPO/mod/cover.png" ]]; then
 	exit 1
 fi
 
-dotnet build "$REPO/src/LocationHotkeys.csproj" -c Release -v minimal
+dotnet build "$REPO/src/SecretWays.csproj" -c Release -v minimal
 
 rm -rf "$STAGE"
 mkdir -p "$STAGE/dll"
 cp "$REPO/mod/synopsis.json" "$STAGE/synopsis.json"
 cp "$REPO/mod/cover.png" "$STAGE/cover.png"
 cp -r "$REPO/mod/content" "$STAGE/content"
-cp "$REPO/src/bin/Release/LocationHotkeys.dll" "$STAGE/dll/LocationHotkeys.dll"
+# The loader looks for dll/<mod name, alphanumerics only>.dll, so this filename has
+# to track "name" in synopsis.json.
+cp "$REPO/src/bin/Release/SecretWays.dll" "$STAGE/dll/SecretWays.dll"
 
 # Carrying the published-file id into the stage is what makes an upload update the
 # existing Workshop item instead of creating a second one. Absent until first publish.

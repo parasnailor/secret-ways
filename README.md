@@ -1,4 +1,4 @@
-# Book of Hours — Location Hotkeys
+# Book of Hours — Secret Ways
 
 Bind spots in Hush House to keys and jump the camera straight back to them.
 
@@ -14,7 +14,7 @@ Tested against Book of Hours `2026.1.f.3` (Linux, Mono).
 | `Shift` + slot key (in bind mode) | Clear that slot |
 
 All twelve keys are rebindable in-game under **Options → Controls**, in a
-"LOCATION HOTKEYS" section below the base game's bindings. Rebinding there gets
+"SECRET WAYS" section below the base game's bindings. Rebinding there gets
 the game's own conflict handling: bind a key that's already in use and the two
 actions swap. Saved locations follow the slot, not the key, so remapping a slot
 keeps whatever view you'd saved to it.
@@ -75,7 +75,7 @@ a text field.
 
 ## Settings
 
-Everything lives in `location_hotkeys.json`, next to your saves
+Everything lives in `secret_ways.json`, next to your saves
 (`~/.config/unity3d/Weather Factory/Book of Hours/` on Linux; the game's
 Options → BROWSE FILES will take you there). It's written on first launch:
 
@@ -109,20 +109,22 @@ change them under Options → Controls.
 - **`RadialRadius`** is how far the wheel's places sit from its centre, and
   **`ShowRadialPreviews": false`** drops the photos for plain plates.
 - **`Playthroughs`** holds one entry per playthrough, each with its own
-  `Locations` keyed by slot (`lhslot1`…`lhslot10`) rather than by key, so
+  `Locations` keyed by slot (`swslot1`…`swslot10`) rather than by key, so
   rebinding doesn't orphan anything. Each location's `"Label"` is the name shown
   on the wheel, and editing it here is the same as renaming it with `F2`.
-- **`Version`** drives migration. Upgrading from a pre-1.3 file drops the
-  locations it held — they were shared by every playthrough, and there's no
-  sound way to say which one they belonged to — but the file is copied to
-  `location_hotkeys.json.pre-v3.bak` first, and your settings carry over.
+- **`Version`** drives migration. The one migration left runs on a file whose
+  `Version` is below 3, and drops the locations it held — those were shared by
+  every playthrough, and there's no sound way to say which one they belonged to —
+  but the file is copied to `secret_ways.json.pre-v3.bak` first, and your settings
+  carry over. Nothing under the mod's old `location_hotkeys.json` name is read any
+  more, so a config from before the rename is ignored rather than migrated.
 
 Each playthrough gets its own locations, so a new game starts with nothing bound.
 A playthrough is identified by its protagonist rather than by a save file, which
 means locations survive reloading and Save As. Entries for abandoned playthroughs
 just sit there; delete them by hand, or delete the file to reset everything.
 
-The wheel's photos sit beside the config in `location_hotkeys_previews/`, one
+The wheel's photos sit beside the config in `secret_ways_previews/`, one
 folder per playthrough and one PNG per slot. They're safe to delete — the wheel
 falls back to slot numbers, and `R` takes them again.
 
@@ -130,7 +132,7 @@ falls back to slot numbers, and `R` takes them again.
 
 ```sh
 tools/sync-refs.sh    # copy the game's assemblies into ref/lib (read-only)
-tools/build.sh        # compile and stage dist/location_hotkeys
+tools/build.sh        # compile and stage dist/secret_ways
 tools/install.sh      # copy it into the game's mods folder
 ```
 
@@ -151,7 +153,7 @@ Book of Hours will not load *any* DLL mod unless a gatekeeper mod named **GHIRBI
 is installed and enabled — that's the game's own consent gate for running
 third-party code (`ModManager.Safety.IsDLLAllowed`). Get it from the [Steam
 Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3682369347) and
-enable it plus "Location Hotkeys" under Options → Mods.
+enable it plus "Secret Ways" under Options → Mods.
 
 If you'd rather not go through Steam, `tools/install.sh --enable-dll-mods` writes
 a local GHIRBI folder and switches both mods on. Same consequence either way: with
@@ -209,8 +211,8 @@ wheel with a few slots filled in is the shot worth leading with.
 tools/build.sh && tools/install.sh
 ```
 
-Then launch through Steam, go to Options → Mods, and press upload on the Location
-Hotkeys row. The game creates the item, opens it in the Steam overlay, and writes
+Then launch through Steam, go to Options → Mods, and press upload on the Secret
+Ways row. The game creates the item, opens it in the Steam overlay, and writes
 its id to `serapeum_catalogue_number.txt` in the *installed* folder. If it's your
 first ever upload you'll be told to accept the Workshop terms — the item stays
 hidden until you do.
@@ -224,7 +226,7 @@ commit that file, and consider tagging the commit you published from.
 ### Updating
 
 Bump `version` in `mod/synopsis.json` *and* `<Version>` in
-[LocationHotkeys.csproj](src/LocationHotkeys.csproj) — the second one is what the
+[SecretWays.csproj](src/SecretWays.csproj) — the second one is what the
 mods list shows next to the name, so they should agree. Then it's the same three
 steps: build, install, upload.
 
@@ -262,7 +264,7 @@ writes is `GHIRBI`. Either value breaks one of the two setups.
 - **Losing the id file makes a duplicate.** No id file means "create a new item", so
   a stray `rm` in `mod/` costs you a second listing with none of the subscribers.
 - **Two mods can't share a name.** Once it's published, subscribing to your own item
-  gives you a Workshop copy *and* `mods/location_hotkeys`;
+  gives you a Workshop copy *and* `mods/secret_ways`;
   `ModEntry.ToggleActivation` refuses to enable two mods with the same `name`. Keep
   the local one enabled while developing, and unsubscribe to test the published one.
 - **Everything staged is published.** `SetItemContent` uploads the folder wholesale,
@@ -275,11 +277,12 @@ writes is `GHIRBI`. Either value breaks one of the two setups.
 
 ## How it works
 
-`ModManager` loads `dll/LocationHotkeys.dll` and calls the static `Initialise()` on
-the global-namespace `LocationHotkeys` class (the name has to match the mod's name
-from `synopsis.json` with non-alphanumerics stripped). That happens before the
-compendium loads and long before any playfield exists, so `Initialise` just parks
-a `DontDestroyOnLoad` MonoBehaviour that waits for the game to catch up.
+`ModManager` loads `dll/SecretWays.dll` and calls the static `Initialise()` on
+the global-namespace `SecretWays` class (both names have to match the mod's name
+from `synopsis.json` with non-alphanumerics stripped; the loader falls back to
+`dll/main.dll` for the file, but nothing saves you on the class). That happens
+before the compendium loads and long before any playfield exists, so `Initialise`
+just parks a `DontDestroyOnLoad` MonoBehaviour that waits for the game to catch up.
 
 From there it's all public game API — no patching:
 
@@ -363,7 +366,7 @@ make them appear, and `content/cultures/hotkeys_loc.json` adds the labels via th
 What the DLL adds is the other half of the pair. The game matches a `Setting` to an
 `InputAction` **by name** (`ControlsController.ApplyExistingKeybindOverrides`,
 `KeybindSettingControlStrategy.Rebind`), so [GameBindings.cs](src/GameBindings.cs)
-injects actions named `lhbindmode` and `lhslot1`…`lhslot10` into the live
+injects actions named `swbindmode` and `swslot1`…`swslot10` into the live
 `InputActionAsset`. Get the name wrong and the row silently rebinds `kbfallback`
 instead. Because those actions are registered after `ControlsController.Start` has
 already replayed saved overrides, `GameBindings` replays its own from each

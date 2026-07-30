@@ -2,7 +2,7 @@ using System.Globalization;
 using SecretHistories.Entities;
 using SecretHistories.UI;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>
 	/// Identifies the playthrough the player is currently in, so saved locations can

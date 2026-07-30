@@ -4,7 +4,7 @@ using SecretHistories.Infrastructure;
 using SecretHistories.UI;
 using UnityEngine.InputSystem;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>
 	/// Registers the mod's keys as real InputActions inside the game's own action
@@ -17,9 +17,9 @@ namespace BookOfHoursLocationHotkeys
 	/// </summary>
 	public class GameBindings
 	{
-		public const string BindModeAction = "lhbindmode";
+		public const string BindModeAction = "swbindmode";
 
-		public const string RadialAction = "lhradial";
+		public const string RadialAction = "swradial";
 
 		public const int SlotCount = 10;
 
@@ -27,7 +27,7 @@ namespace BookOfHoursLocationHotkeys
 		/// name, so a rebind in the options menu doesn't orphan a saved location.</summary>
 		public static string SlotAction(int slot)
 		{
-			return "lhslot" + slot;
+			return "swslot" + slot;
 		}
 
 		/// <summary>
@@ -141,11 +141,11 @@ namespace BookOfHoursLocationHotkeys
 
 			ApplySavedOverrides();
 			Ready = true;
-			NoonUtility.Log("Location Hotkeys: registered " + _actions.Count + " actions in the game's keybindings.");
+			NoonUtility.Log("Secret Ways: registered " + _actions.Count + " actions in the game's keybindings.");
 
 			if (_yielded.Count > 0)
 			{
-				NoonUtility.LogWarning("Location Hotkeys: left " + _yielded.Count
+				NoonUtility.LogWarning("Secret Ways: left " + _yielded.Count
 					+ " key(s) unset because you'd already bound their defaults to something else - "
 					+ string.Join(", ", _yielded.ToArray())
 					+ ". Set them under Options > Controls.");

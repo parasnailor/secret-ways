@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BookOfHoursLocationHotkeys
+namespace BookOfHoursSecretWays
 {
 	/// <summary>
 	/// Everything the mod knows about looking like Book of Hours: which canvas to
@@ -78,7 +78,7 @@ namespace BookOfHoursLocationHotkeys
 			// can't collide with anything of its own.
 			if (_overlayParent == null)
 			{
-				GameObject canvasObject = new GameObject("LocationHotkeysCanvas");
+				GameObject canvasObject = new GameObject("SecretWaysCanvas");
 				Object.DontDestroyOnLoad(canvasObject);
 
 				Canvas canvas = canvasObject.AddComponent<Canvas>();
