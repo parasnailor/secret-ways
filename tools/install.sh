@@ -1,42 +1,19 @@
 #!/usr/bin/env bash
 # Copy the staged mod into the game's local mods folder.
 #
-# Usage: tools/install.sh [--enable-dll-mods] [DATA_DIR]
+# Usage: tools/install.sh [DATA_DIR]
 #   DATA_DIR is the game's save folder - the one holding mods/ and mods.txt.
 #   It defaults to $BOH_DATA_DIR, then to the usual per-platform location.
 #   Options > BROWSE FILES in-game opens it.
 #
-# Book of Hours refuses to load any DLL mod unless a "gatekeeper" mod named
-# GHIRBI is installed and enabled - that is the game's own consent gate for
-# running third-party code. Pass --enable-dll-mods to create a local GHIRBI
-# folder and switch both mods on without going through the in-game menu.
+# Enabling the mod is a separate, in-game step: Options > Mods, where both Secret
+# Ways and the GHIRBI gatekeeper have to be switched on.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STAGE="$REPO/dist/secret_ways"
 
-ENABLE=0
-DATA=""
-for arg in "$@"; do
-	case "$arg" in
-		--enable-dll-mods)
-			ENABLE=1
-			;;
-		-*)
-			echo "Unknown option: $arg" >&2
-			echo "Usage: tools/install.sh [--enable-dll-mods] [DATA_DIR]" >&2
-			exit 1
-			;;
-		*)
-			DATA="$arg"
-			;;
-	esac
-done
-
-if [[ -z "$DATA" ]]; then
-	DATA="${BOH_DATA_DIR:-$HOME/.config/unity3d/Weather Factory/Book of Hours}"
-fi
-
+DATA="${1:-${BOH_DATA_DIR:-$HOME/.config/unity3d/Weather Factory/Book of Hours}}"
 MODS="$DATA/mods"
 
 if [[ ! -d "$STAGE" ]]; then
@@ -71,47 +48,11 @@ if [[ -f "$REPO/mod/$CATALOGUE" ]]; then
 fi
 
 echo "Installed $MODS/secret_ways"
-
-if [[ $ENABLE -eq 0 ]]; then
-	cat <<EOF
-
-Not enabled yet. Either:
-  - enable "Secret Ways" and the GHIRBI gatekeeper in-game under
-    Options > Mods (GHIRBI is on the Steam Workshop), or
-  - re-run this script as: tools/install.sh --enable-dll-mods
-EOF
-	exit 0
-fi
-
-# The gatekeeper is matched on its name and description verbatim; see
-# ModManager.Safety.IsGatekeeper in the decompiled game code.
-mkdir -p "$MODS/ghirbi"
-cat > "$MODS/ghirbi/synopsis.json" <<'EOF'
-{
-    "name": "GHIRBI",
-    "author": "Weather Factory",
-    "version": "1.0.0",
-
-    "description": "WARNING! Enabling this permits execution of third-party code by DLL mods. Use only trusted DLL mods; and still at your own risk.",
-    "description_long": "Local copy of the gatekeeper mod that unlocks DLL modding.",
-    "tags": [ "Utility" ]
-}
-EOF
-
-# mods.txt is one enabled mod id (folder name) per line.
-ENABLED="$DATA/mods.txt"
-touch "$ENABLED"
-for id in ghirbi secret_ways; do
-	grep -qxF "$id" "$ENABLED" || echo "$id" >> "$ENABLED"
-done
-
 cat <<EOF
 
-Enabled GHIRBI + Secret Ways in $ENABLED
+Not enabled yet. Enable "Secret Ways" and the GHIRBI gatekeeper in-game under
+Options > Mods (GHIRBI is on the Steam Workshop:
+https://steamcommunity.com/sharedfiles/filedetails/?id=3682369347).
 
-  GHIRBI is the game's consent gate for DLL mods. With it on, any enabled DLL
-  mod runs arbitrary code in the game process. Turn it off under Options > Mods
-  if you stop wanting that.
-
-Restart Book of Hours for the changes to take effect.
+Restart Book of Hours afterwards - DLLs are loaded once during startup.
 EOF
