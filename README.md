@@ -103,31 +103,3 @@ row in-game. The first upload also needs the item set Public and GHIRBI
 `mod/serapeum_catalogue_number.txt` is the maintainer's Workshop item id and
 is what makes an upload update that item rather than create a new one. If you
 fork the mod, delete it so your first upload creates your own item.
-
-## License
-
-[MIT](LICENSE).
-
-## How it works
-
-No patching; plain public API only.
-
-- `Watchman.Get<CamOperator>()` is the tabletop camera. `GetAttachedCamera()
-  .transform.position` is the viewport (`z` is zoom height, negative), and
-  `PointAtTableLevelAtHeight` flies to a saved one. `StopAllMovement()` comes
-  first, so held pan keys don't fight the glide.
-- Locations are scoped per playthrough by protagonist and `DateTimeCreated`, not
-  by save file — see [Playthrough.cs](src/Playthrough.cs).
-- `LocalNexus.DisablePlayerInput(0f)` holds the game still while the wheel is up,
-  but doesn't stop cards being clicked — the wheel's full-screen scrim does that.
-- Wheel slots sit on an ellipse (the plates are wider than they are tall), and
-  hover is resolved by direction from the centre, not pointer events, which is
-  what lets you flick towards a slot and release without landing on it. The hit
-  test divides out the horizontal stretch first.
-- Renaming uses a real `TMP_InputField`, so selection, word jumps and the
-  clipboard work, and the game's `UIController.IsEditingText()` suppresses
-  base-game hotkeys while you type.
-- Thumbnails are captured at bind time through a throwaway `Camera` that
-  `CopyFrom`s the real one into a `RenderTexture`. Bind time is the only honest
-  moment: wall translucency and darkening are driven off camera `z` by
-  `ZoomEffectController`, so a later render would show the wrong thing.
