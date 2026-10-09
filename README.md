@@ -68,6 +68,9 @@ with thumbnails in `secret_ways_previews/`. Both are safe to delete.
 
 ## Building
 
+You need a copy of Book of Hours and the .NET SDK. This repository contains no
+game files: the build compiles against assemblies copied from your own install.
+
 ```sh
 tools/sync-refs.sh    # copy the game's assemblies into ref/lib (read-only)
 tools/build.sh        # compile and stage dist/secret_ways
@@ -80,33 +83,32 @@ locations:
 
 ```sh
 tools/sync-refs.sh "/path/to/Book of Hours"                # the folder holding bh_Data/
-tools/install.sh "/path/to/Weather Factory/Book of Hours"  # the folder Options → BROWSE FILES opens
+tools/install.sh "/path/to/Weather Factory/Book of Hours"  # the save folder; Options → BROWSE FILES opens it
 ```
 
-Nothing writes to the game install. `ref/` is gitignored: `ref/lib/` is
-assemblies copied out of the game, `ref/decomp/` is decompiled sources.
+Nothing writes to the game install. `ref/` is gitignored and must never be
+committed: `ref/lib/` is assemblies copied out of the game, `ref/decomp/` is
+decompiled sources.
 
 Then enable **Secret Ways** and **GHIRBI** under Options → Mods and restart —
 DLLs are loaded once during startup.
 
-## Publishing
+## Publishing (maintainers)
 
-The game publishes to the Workshop itself, from Options → Mods; the listing is
-edited by editing `mod/synopsis.json` rather than on the web. To ship an update:
+The game uploads to the Workshop itself, from Options → Mods, using
+`mod/synopsis.json` as the listing. To ship an update, bump `version` in
+`mod/synopsis.json` **and** `<Version>` in [SecretWays.csproj](src/SecretWays.csproj),
+run `tools/build.sh && tools/install.sh`, then press upload on the Secret Ways
+row in-game. The first upload also needs the item set Public and GHIRBI
+(`3682369347`) added under *Add/Remove Required Items*.
 
-1. Bump `version` in `mod/synopsis.json` **and** `<Version>` in
-   [SecretWays.csproj](src/SecretWays.csproj) — the second is what the mods list
-   shows next to the name.
-2. `tools/build.sh && tools/install.sh`
-3. Launch through Steam, press upload on the Secret Ways row under Options → Mods.
+`mod/serapeum_catalogue_number.txt` is the maintainer's Workshop item id and
+is what makes an upload update that item rather than create a new one. If you
+fork the mod, delete it so your first upload creates your own item.
 
-`mod/serapeum_catalogue_number.txt` is what makes that update the existing item
-instead of creating a second one. Don't delete it.
+## License
 
-First upload is the same three steps, plus two one-time things on the item page
-afterwards: set it Public, and add GHIRBI (`3682369347`) under *Add/Remove
-Required Items*. Screenshots go on the item page too — the game only ever sets
-the primary preview, from `cover.png`.
+[MIT](LICENSE).
 
 ## How it works
 
