@@ -68,8 +68,7 @@ with thumbnails in `secret_ways_previews/`. Both are safe to delete.
 
 ## Building
 
-You need a copy of Book of Hours and the .NET SDK. This repository contains no
-game files: the build compiles against assemblies copied from your own install.
+You need a copy of Book of Hours and the .NET SDK.
 
 ```sh
 tools/sync-refs.sh    # copy the game's assemblies into ref/lib (read-only)
@@ -86,9 +85,8 @@ tools/sync-refs.sh "/path/to/Book of Hours"                # the folder holding 
 tools/install.sh "/path/to/Weather Factory/Book of Hours"  # the save folder; Options → BROWSE FILES opens it
 ```
 
-Nothing writes to the game install. `ref/` is gitignored and must never be
-committed: `ref/lib/` is assemblies copied out of the game, `ref/decomp/` is
-decompiled sources.
+Nothing writes to the game install. `ref/lib/` is assemblies copied out of the
+game, `ref/decomp/` is decompiled sources.
 
 Then enable **Secret Ways** and **GHIRBI** under Options → Mods and restart —
 DLLs are loaded once during startup.
